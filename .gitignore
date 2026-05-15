@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+
+uploads/
+outputs/
+
+.env
+.venv/
+venv/
+
+*.log
