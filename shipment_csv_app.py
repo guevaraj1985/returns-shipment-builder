@@ -756,12 +756,75 @@ def write_havn_request_report(requests: list[dict[str, Any]]) -> Path:
     return output_path
 
 
-def write_havn_order_import(requests: list[dict[str, Any]]) -> Path:
-    output_path = OUTPUT_DIR / f"havn_order_import_starter_{uuid.uuid4().hex[:8]}.csv"
+def parse_shopify_rows(csv_text: str) -> list[dict[str, str]]:
+    if not csv_text.strip():
+        return []
+    reader = csv.DictReader(io.StringIO(csv_text))
+    return [{key: cell_text(value) for key, value in row.items()} for row in reader]
+
+
+def shopify_by_order(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    lookup: dict[str, dict[str, str]] = {}
+    for row in rows:
+        order = row_value(row, ["Shopify Order#", "Order Number", "Order #"])
+        if order:
+            lookup[normalized(order)] = row
+    return lookup
+
+
+def package_for_sku(sku: str, qty: str = "1") -> dict[str, str]:
+    sku_norm = normalized(sku)
+    qty_num = numeric_quantity(qty) or 1
+    if "blkt" in sku_norm or qty_num > 1:
+        if qty_num >= 4:
+            return {"Package Type": "Box", "Package Length": "20", "Package Width": "20", "Package Height": "20"}
+        return {"Package Type": "Box", "Package Length": "16", "Package Width": "12", "Package Height": "8"}
+    return {"Package Type": "Mailer", "Package Length": "10", "Package Width": "13", "Package Height": "0"}
+
+
+def havn_validation_rows(requests: list[dict[str, Any]], shopify_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    by_order = shopify_by_order(shopify_rows)
+    validation: list[dict[str, str]] = []
+    for row in havn_request_rows(requests):
+        source_order = row["Source Order"]
+        shopify = by_order.get(normalized(source_order))
+        shopify_skus = split_skus(row_value(shopify or {}, ["SKUs", "SKU", "Item SKU"]))
+        status = "Matched"
+        if not shopify:
+            status = "Order not found in Shopify CSV"
+        elif row["SKU"] not in shopify_skus:
+            status = "SKU not found on Shopify order"
+        validation.append(
+            {
+                "Order Number": row["Order Number"],
+                "SKU": row["SKU"],
+                "Shopify SKUs": ", ".join(shopify_skus),
+                "Status": status,
+            }
+        )
+    return validation
+
+
+def write_havn_validation_report(requests: list[dict[str, Any]], shopify_rows: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"havn_sku_validation_{uuid.uuid4().hex[:8]}.csv"
+    rows = havn_validation_rows(requests, shopify_rows)
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["Order Number", "SKU", "Shopify SKUs", "Status"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def write_havn_order_import(requests: list[dict[str, Any]], shopify_rows: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"HAVN_RET_IMPORT_{uuid.uuid4().hex[:8]}.csv"
+    by_order = shopify_by_order(shopify_rows)
     with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.DictWriter(handle, fieldnames=HAVN_ORDER_IMPORT_FIELDS)
         writer.writeheader()
         for row in havn_request_rows(requests):
+            shopify = by_order.get(normalized(row["Source Order"]), {})
+            full_name = title_case_name(row_value(shopify, ["Full Name", "Name", "Customer"]))
+            package = package_for_sku(row["SKU"], row["Qty"])
             writer.writerow(
                 {
                     "Order Number": row["Order Number"],
@@ -776,30 +839,30 @@ def write_havn_order_import(requests: list[dict[str, Any]]) -> Path:
                     "First Name": "HAVN",
                     "Last Name": "RETURN",
                     "Address Line 1": "7050 New Buffington Road",
-                    "Address Line 2": "",
+                    "Address Line 2": "#50872546",
                     "City": "Florence",
                     "State/Province": "KY",
                     "Zip/Postal Code": "41042",
                     "Country": "US",
                     "Email": "hello@havnwear.com",
                     "Phone": "14088285055",
-                    "Notes": "Needs Soapbox origin/customer enrichment",
+                    "Notes": "",
                     "Signature Required": "",
                     "Package SKU": "",
-                    "Package Type": "",
-                    "Package Length": "",
-                    "Package Width": "",
-                    "Package Height": "",
+                    "Package Type": package["Package Type"],
+                    "Package Length": package["Package Length"],
+                    "Package Width": package["Package Width"],
+                    "Package Height": package["Package Height"],
                     "Declared Value": "",
                     "Package #": "",
-                    "Origin Address Line 1": "",
-                    "Origin Address Line 2": "",
-                    "Origin City": "",
-                    "Origin State/Province": "",
-                    "Origin Zip/Postal Code": "",
-                    "Origin Country": "US",
+                    "Origin Address Line 1": row_value(shopify, ["Address Line 1"]),
+                    "Origin Address Line 2": row_value(shopify, ["Address Line 2"]),
+                    "Origin City": row_value(shopify, ["City"]),
+                    "Origin State/Province": row_value(shopify, ["State", "State/Province"]),
+                    "Origin Zip/Postal Code": row_value(shopify, ["Zipcode", "Zip/Postal Code", "Zip"]),
+                    "Origin Country": row_value(shopify, ["Country Code", "Country"]) or "US",
                     "Origin Company": "Basic_3PL_RMA",
-                    "Origin Contact Name": "",
+                    "Origin Contact Name": full_name,
                     "Origin Phone": "14088285055",
                     "Origin Email": "hello@havnwear.com",
                 }
@@ -1253,9 +1316,13 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             if not requests:
                 self.send_json({"error": "Add at least one Havn return email first."}, HTTPStatus.BAD_REQUEST)
                 return
+            shopify_rows = parse_shopify_rows(payload.get("shopify_csv", ""))
             report_path = write_havn_request_report(requests)
             upload_path = write_havn_inbound_upload(requests)
+            order_import_path = write_havn_order_import(requests, shopify_rows) if shopify_rows else None
+            validation_path = write_havn_validation_report(requests, shopify_rows) if shopify_rows else None
             rows = havn_request_rows(requests)
+            validation = havn_validation_rows(requests, shopify_rows) if shopify_rows else []
         except Exception as exc:
             self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -1263,9 +1330,12 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             {
                 "report_url": f"/download/{report_path.name}",
                 "upload_url": f"/download/{upload_path.name}",
+                "order_import_url": f"/download/{order_import_path.name}" if order_import_path else "",
+                "validation_url": f"/download/{validation_path.name}" if validation_path else "",
                 "row_count": len(rows),
                 "preview": rows[:100],
                 "upload_preview": havn_inbound_preview(requests)[:25],
+                "validation_preview": validation[:100],
             }
         )
 
@@ -1574,8 +1644,13 @@ HTML = r"""
       <section>
         <h2>Havn Return List</h2>
         <div id="havnList" class="subtle">No Havn emails added yet.</div>
+        <div style="margin-top: 14px;">
+          <label>Shopify Order Data CSV
+            <input id="havnShopifyFile" type="file" accept=".csv">
+          </label>
+        </div>
         <div class="row">
-          <button id="havnExport">Generate Havn Inbound Shipment</button>
+          <button id="havnExport">Generate Havn Files</button>
         </div>
       </section>
 
@@ -1770,18 +1845,22 @@ HTML = r"""
       }
       havnStatusEl.textContent = "Generating Havn files...";
       document.querySelector("#havnExport").disabled = true;
+      const shopifyFile = document.querySelector("#havnShopifyFile").files[0];
       try {
+        const shopifyCsv = shopifyFile ? await shopifyFile.text() : "";
         const response = await fetch("/api/havn/export", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requests: havnRequests }),
+          body: JSON.stringify({ requests: havnRequests, shopify_csv: shopifyCsv }),
         });
         const data = await response.json();
         if (!response.ok) {
           havnStatusEl.textContent = data.error || "Could not generate Havn files.";
           return;
         }
-        havnStatusEl.textContent = "Havn inbound shipment CSV and report are ready.";
+        havnStatusEl.textContent = shopifyCsv
+          ? "Havn inbound shipment, order import, and validation report are ready."
+          : "Havn inbound shipment CSV and report are ready.";
         renderHavnResult(data);
       } catch (error) {
         havnStatusEl.textContent = "The server stopped responding while generating Havn files.";
@@ -1874,14 +1953,25 @@ HTML = r"""
     function renderHavnResult(data) {
       const preview = data.preview || [];
       const uploadPreview = data.upload_preview || [];
+      const validationPreview = data.validation_preview || [];
       havnResultEl.innerHTML = `
         <div class="success">
           <strong>${data.row_count} Havn return rows created.</strong>
           <div class="row">
             <a class="download" href="${data.report_url}">Download Havn Report</a>
             <a class="download" href="${data.upload_url}">Download Inbound Upload CSV</a>
+            ${data.order_import_url ? `<a class="download" href="${data.order_import_url}">Download Havn Order Import</a>` : ""}
+            ${data.validation_url ? `<a class="download" href="${data.validation_url}">Download SKU Validation</a>` : ""}
           </div>
         </div>
+        ${validationPreview.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>SKU Validation Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(validationPreview)}
+            </div>
+          </details>
+        ` : ""}
         ${preview.length ? `
           <details style="margin-top: 18px;">
             <summary><strong>Report Preview</strong></summary>
