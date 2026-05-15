@@ -908,11 +908,7 @@ def outbound_order_rows(file_id: str) -> list[dict[str, str]]:
                     "Country": row_value(source, ["Country Code", "Country"]),
                     "Email": "",
                     "Phone": "",
-                    "Notes": (
-                        f"Original External Order ID: {row_value(source, ['External Order ID'])}"
-                        if row_value(source, ["External Order ID"])
-                        else ""
-                    ),
+                    "Notes": "",
                     "Signature Required": "",
                     "Package SKU": "",
                     "Package Type": "",
