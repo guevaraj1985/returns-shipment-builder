@@ -38,3 +38,13 @@ The build creates:
 - `dist\ReturnsShipmentBuilder.zip`
 
 Send users the ZIP file. They should extract it and double-click `ReturnsShipmentBuilder.exe`.
+
+## Updates
+
+The packaged app checks the latest GitHub release on startup. To publish an update:
+
+1. Build a new ZIP with `.\build_windows.ps1`.
+2. Create a GitHub release with a higher tag, such as `v0.1.1`.
+3. Attach `dist\ReturnsShipmentBuilder.zip` to the release.
+
+Users will see an update banner the next time the app starts.

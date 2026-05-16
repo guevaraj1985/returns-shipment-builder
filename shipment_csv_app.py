@@ -18,6 +18,8 @@ import threading
 from typing import Any
 from urllib.parse import unquote
 import webbrowser
+import urllib.error
+import urllib.request
 
 import pandas as pd
 
@@ -27,6 +29,9 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+APP_VERSION = "0.1.0"
+GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
     ("order_number", "Order Number"),
@@ -1015,6 +1020,57 @@ def outbound_report_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     return report
 
 
+def version_tuple(value: str) -> tuple[int, ...]:
+    cleaned = value.strip().lower().lstrip("v")
+    parts = []
+    for part in re.split(r"[^0-9]+", cleaned):
+        if part:
+            parts.append(int(part))
+    return tuple(parts or [0])
+
+
+def check_for_update() -> dict[str, Any]:
+    try:
+        request = urllib.request.Request(
+            GITHUB_LATEST_RELEASE_URL,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "ReturnsShipmentBuilder",
+            },
+        )
+        with urllib.request.urlopen(request, timeout=4) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return {
+            "ok": False,
+            "current_version": APP_VERSION,
+            "message": f"Could not check for updates: {exc}",
+        }
+
+    latest = cell_text(payload.get("tag_name", ""))
+    latest_url = cell_text(payload.get("html_url", ""))
+    assets = payload.get("assets") or []
+    zip_asset = next(
+        (
+            asset
+            for asset in assets
+            if str(asset.get("name", "")).lower().endswith(".zip")
+        ),
+        None,
+    )
+    download_url = cell_text((zip_asset or {}).get("browser_download_url", "")) or latest_url
+    has_update = bool(latest and version_tuple(latest) > version_tuple(APP_VERSION))
+    return {
+        "ok": True,
+        "current_version": APP_VERSION,
+        "latest_version": latest,
+        "update_available": has_update,
+        "release_url": latest_url,
+        "download_url": download_url,
+        "message": "Update available." if has_update else "You are running the latest version.",
+    }
+
+
 def value_from(row: dict[str, Any], column: str) -> str:
     if not column:
         return ""
@@ -1172,6 +1228,9 @@ class ShipmentHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path == "/":
             self.send_bytes(HTML.encode("utf-8"), "text/html; charset=utf-8")
+            return
+        if self.path == "/api/update-check":
+            self.send_json(check_for_update())
             return
         if self.path.startswith("/download/"):
             filename = Path(unquote(self.path.split("/download/", 1)[1])).name
@@ -1586,6 +1645,17 @@ HTML = r"""
       background: #f0fdf9;
       border-radius: 8px;
     }
+    .update-banner {
+      display: none;
+      padding: 12px 32px;
+      border-bottom: 1px solid var(--line);
+      background: #fff7ed;
+      color: #7c2d12;
+    }
+    .update-banner a {
+      color: #0f766e;
+      font-weight: 700;
+    }
     tr.problem td {
       background: #fff7ed;
     }
@@ -1597,6 +1667,7 @@ HTML = r"""
   </style>
 </head>
 <body>
+  <div id="updateBanner" class="update-banner"></div>
   <header>
     <h1>Inbound Shipment CSV Builder</h1>
     <div class="subtle">Upload one tabbed workbook or three spreadsheets, confirm the columns when needed, then export the platform-ready CSV.</div>
@@ -1704,6 +1775,9 @@ HTML = r"""
     const outboundStatusEl = document.querySelector("#outboundStatus");
     const outboundResultSection = document.querySelector("#outboundResultSection");
     const outboundResultEl = document.querySelector("#outboundResult");
+    const updateBannerEl = document.querySelector("#updateBanner");
+
+    checkForUpdates();
 
     document.querySelector("#christyTab").addEventListener("click", () => setAppTab("christy"));
     document.querySelector("#havnTab").addEventListener("click", () => setAppTab("havn"));
@@ -1716,6 +1790,23 @@ HTML = r"""
       document.querySelector("#christyTab").classList.toggle("active", tabName === "christy");
       document.querySelector("#havnTab").classList.toggle("active", tabName === "havn");
       document.querySelector("#outboundTab").classList.toggle("active", tabName === "outbound");
+    }
+
+    async function checkForUpdates() {
+      try {
+        const response = await fetch("/api/update-check", { cache: "no-store" });
+        const data = await response.json();
+        if (data.update_available) {
+          updateBannerEl.innerHTML = `A newer version is available: ${escapeHtml(data.latest_version)}. <a href="${escapeHtml(data.download_url || data.release_url)}" target="_blank" rel="noreferrer">Download update</a>`;
+          updateBannerEl.style.display = "block";
+        } else if (!data.ok) {
+          updateBannerEl.textContent = data.message || "Could not check for updates.";
+          updateBannerEl.style.display = "block";
+        }
+      } catch (error) {
+        updateBannerEl.textContent = "Could not check for updates.";
+        updateBannerEl.style.display = "block";
+      }
     }
 
     document.querySelector("#analyze").addEventListener("click", async () => {
