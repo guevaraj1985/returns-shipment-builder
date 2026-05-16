@@ -38,6 +38,7 @@ The build creates:
 - `dist\ReturnsShipmentBuilder.zip`
 
 Send users the ZIP file. They should extract it and double-click `ReturnsShipmentBuilder.exe`.
+The packaged app runs without a command window; users can stop it with the **Close App** button in the browser.
 
 ## Updates
 

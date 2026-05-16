@@ -19,6 +19,7 @@ Remove-Item -Force ".\$AppName.spec" -ErrorAction SilentlyContinue
 
 & $Python -m PyInstaller `
     --onefile `
+    --noconsole `
     --name $AppName `
     --clean `
     --collect-all pandas `

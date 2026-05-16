@@ -1261,6 +1261,10 @@ class ShipmentHandler(BaseHTTPRequestHandler):
         self.send_json({"error": "Not found."}, HTTPStatus.NOT_FOUND)
 
     def do_POST(self) -> None:
+        if self.path == "/api/shutdown":
+            self.send_json({"ok": True, "message": "Application is closing."})
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
+            return
         if self.path == "/api/analyze":
             self.handle_analyze()
             return
@@ -1393,13 +1397,9 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             if not requests:
                 self.send_json({"error": "Add at least one Havn return email first."}, HTTPStatus.BAD_REQUEST)
                 return
-            shopify_rows = parse_shopify_rows(payload.get("shopify_csv", ""))
             report_path = write_havn_request_report(requests)
             upload_path = write_havn_inbound_upload(requests)
-            order_import_path = write_havn_order_import(requests, shopify_rows) if shopify_rows else None
-            validation_path = write_havn_validation_report(requests, shopify_rows) if shopify_rows else None
             rows = havn_request_rows(requests)
-            validation = havn_validation_rows(requests, shopify_rows) if shopify_rows else []
         except Exception as exc:
             self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -1407,12 +1407,9 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             {
                 "report_url": f"/download/{report_path.name}",
                 "upload_url": f"/download/{upload_path.name}",
-                "order_import_url": f"/download/{order_import_path.name}" if order_import_path else "",
-                "validation_url": f"/download/{validation_path.name}" if validation_path else "",
                 "row_count": len(rows),
                 "preview": rows[:100],
                 "upload_preview": havn_inbound_preview(requests)[:25],
-                "validation_preview": validation[:100],
             }
         )
 
@@ -1507,6 +1504,12 @@ HTML = r"""
       border-bottom: 1px solid var(--line);
       background: #ffffff;
     }
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
     h1 {
       margin: 0 0 6px;
       font-size: 24px;
@@ -1561,6 +1564,11 @@ HTML = r"""
       cursor: pointer;
     }
     button:hover, .download:hover { background: var(--accent-dark); }
+    button.secondary {
+      background: #e8eef5;
+      color: #243244;
+    }
+    button.secondary:hover { background: #cbd5e1; }
     button:disabled {
       opacity: .45;
       cursor: not-allowed;
@@ -1685,8 +1693,13 @@ HTML = r"""
 <body>
   <div id="updateBanner" class="update-banner"></div>
   <header>
-    <h1>Inbound Shipment CSV Builder</h1>
-    <div class="subtle">Upload one tabbed workbook or three spreadsheets, confirm the columns when needed, then export the platform-ready CSV.</div>
+    <div class="header-top">
+      <div>
+        <h1>Inbound Shipment CSV Builder</h1>
+        <div class="subtle">Upload one tabbed workbook or three spreadsheets, confirm the columns when needed, then export the platform-ready CSV.</div>
+      </div>
+      <button class="secondary" id="closeApp" type="button">Close App</button>
+    </div>
   </header>
   <main>
     <div class="tabs">
@@ -1733,11 +1746,6 @@ HTML = r"""
       <section>
         <h2>Havn Return List</h2>
         <div id="havnList" class="subtle">No Havn emails added yet.</div>
-        <div style="margin-top: 14px;">
-          <label>Shopify Order Data CSV
-            <input id="havnShopifyFile" type="file" accept=".csv">
-          </label>
-        </div>
         <div class="row">
           <button id="havnExport">Generate Havn Files</button>
         </div>
@@ -1798,6 +1806,14 @@ HTML = r"""
     document.querySelector("#christyTab").addEventListener("click", () => setAppTab("christy"));
     document.querySelector("#havnTab").addEventListener("click", () => setAppTab("havn"));
     document.querySelector("#outboundTab").addEventListener("click", () => setAppTab("outbound"));
+    document.querySelector("#closeApp").addEventListener("click", async () => {
+      try {
+        await fetch("/api/shutdown", { method: "POST" });
+        document.body.innerHTML = '<main><section><h2>Returns Shipment Builder is closed.</h2><div class="subtle">You can close this browser tab.</div></section></main>';
+      } catch (error) {
+        alert("Could not close the app from the browser. You can close it from Task Manager.");
+      }
+    });
 
     function setAppTab(tabName) {
       document.querySelector("#christyApp").classList.toggle("hidden", tabName !== "christy");
@@ -1954,22 +1970,18 @@ HTML = r"""
       }
       havnStatusEl.textContent = "Generating Havn files...";
       document.querySelector("#havnExport").disabled = true;
-      const shopifyFile = document.querySelector("#havnShopifyFile").files[0];
       try {
-        const shopifyCsv = shopifyFile ? await shopifyFile.text() : "";
         const response = await fetch("/api/havn/export", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requests: havnRequests, shopify_csv: shopifyCsv }),
+          body: JSON.stringify({ requests: havnRequests }),
         });
         const data = await response.json();
         if (!response.ok) {
           havnStatusEl.textContent = data.error || "Could not generate Havn files.";
           return;
         }
-        havnStatusEl.textContent = shopifyCsv
-          ? "Havn inbound shipment, order import, and validation report are ready."
-          : "Havn inbound shipment CSV and report are ready.";
+        havnStatusEl.textContent = "Havn inbound shipment CSV and report are ready.";
         renderHavnResult(data);
       } catch (error) {
         havnStatusEl.textContent = "The server stopped responding while generating Havn files.";
@@ -2062,25 +2074,14 @@ HTML = r"""
     function renderHavnResult(data) {
       const preview = data.preview || [];
       const uploadPreview = data.upload_preview || [];
-      const validationPreview = data.validation_preview || [];
       havnResultEl.innerHTML = `
         <div class="success">
           <strong>${data.row_count} Havn return rows created.</strong>
           <div class="row">
             <a class="download" href="${data.report_url}">Download Havn Report</a>
             <a class="download" href="${data.upload_url}">Download Inbound Upload CSV</a>
-            ${data.order_import_url ? `<a class="download" href="${data.order_import_url}">Download Havn Order Import</a>` : ""}
-            ${data.validation_url ? `<a class="download" href="${data.validation_url}">Download SKU Validation</a>` : ""}
           </div>
         </div>
-        ${validationPreview.length ? `
-          <details style="margin-top: 18px;">
-            <summary><strong>SKU Validation Preview</strong></summary>
-            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
-              ${simpleTable(validationPreview)}
-            </div>
-          </details>
-        ` : ""}
         ${preview.length ? `
           <details style="margin-top: 18px;">
             <summary><strong>Report Preview</strong></summary>
