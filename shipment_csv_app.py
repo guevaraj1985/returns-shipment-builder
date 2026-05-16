@@ -1040,6 +1040,22 @@ def check_for_update() -> dict[str, Any]:
         )
         with urllib.request.urlopen(request, timeout=4) as response:
             payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return {
+                "ok": True,
+                "current_version": APP_VERSION,
+                "latest_version": APP_VERSION,
+                "update_available": False,
+                "release_url": "",
+                "download_url": "",
+                "message": "No published updates yet.",
+            }
+        return {
+            "ok": False,
+            "current_version": APP_VERSION,
+            "message": f"Could not check for updates: {exc}",
+        }
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
         return {
             "ok": False,
