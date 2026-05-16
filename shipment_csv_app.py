@@ -14,13 +14,15 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import threading
 from typing import Any
 from urllib.parse import unquote
+import webbrowser
 
 import pandas as pd
 
 
-BASE_DIR = Path(__file__).resolve().parent
+BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -2143,5 +2145,7 @@ HTML = r"""
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8776"))
     address = ("127.0.0.1", port)
-    print(f"Shipment CSV Builder running at http://{address[0]}:{address[1]}")
+    url = f"http://{address[0]}:{address[1]}/"
+    print(f"Shipment CSV Builder running at {url}")
+    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
     ThreadingHTTPServer(address, ShipmentHandler).serve_forever()

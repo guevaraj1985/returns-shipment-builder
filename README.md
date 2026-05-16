@@ -23,3 +23,18 @@ http://localhost:8776/
 ## Notes
 
 Generated uploads, downloads, and temporary workbook copies are written to `uploads/` and `outputs/`; those folders are intentionally ignored by git.
+
+## Build Windows Executable
+
+Run:
+
+```powershell
+.\build_windows.ps1
+```
+
+The build creates:
+
+- `dist\ReturnsShipmentBuilder.exe`
+- `dist\ReturnsShipmentBuilder.zip`
+
+Send users the ZIP file. They should extract it and double-click `ReturnsShipmentBuilder.exe`.
