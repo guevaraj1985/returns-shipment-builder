@@ -125,7 +125,78 @@ SOAPBOX_ORDER_IMPORT_FIELDS = [
     "Package Height",
     "Declared Value",
     "Package #",
+    "Origin Address Line 1",
+    "Origin Address Line 2",
+    "Origin City",
+    "Origin State/Province",
+    "Origin Zip/Postal Code",
+    "Origin Country",
+    "Origin Company",
+    "Origin Contact Name",
+    "Origin Phone",
+    "Origin Email",
 ]
+
+HAVN_DESTINATION_FIELDS = {
+    "Company Name": "Basic 3PL RMA",
+    "First Name": "HAVN",
+    "Last Name": "RETURN",
+    "Address Line 1": "7050 New Buffington Road",
+    "Address Line 2": "#50872546",
+    "City": "Florence",
+    "State/Province": "KY",
+    "Zip/Postal Code": "41042",
+    "Country": "US",
+    "Email": "hello@havnwear.com",
+    "Phone": "14088285055",
+}
+
+HAVN_ORIGIN_DEFAULTS = {
+    "Origin Company": "Basic_3PL_RMA",
+    "Origin Phone": "14088285055",
+    "Origin Email": "hello@havnwear.com",
+}
+
+SKU_PACKAGE_DEFAULTS = {
+    "FD-PCAP-BLK-1": ("Box", "24", "16", "12"),
+    "FD-PJSET-HNVY-L": ("Box", "20", "14", "11"),
+    "FD-PJSET-HNVY-M": ("Box", "24", "16", "12"),
+    "FD-PJSET-HNVY-S": ("Box", "16", "12", "8"),
+    "FD-UCAP-BLK-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-CSMR-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-HGRY-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-LIVY-1": ("Box", "24", "16", "12"),
+    "FD-UCAP-NVY-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-PUR-1": ("Box", "16", "12", "8"),
+    "FD-UJGR-BLK-M": ("Box", "24", "16", "12"),
+    "FD-UJGR-NVY-M": ("Box", "24", "16", "12"),
+    "FD-ULGHTBNE-BLK-1": ("Box", "8", "6", "4"),
+    "FD-ULGHTBNE-GRY-1": ("Box", "8", "6", "4"),
+    "FD-ULGHTBNE-WHT-1": ("Box", "12", "8", "6"),
+    "FD2-BLKT-BEI": ("Box", "12", "8", "6"),
+    "FD2-BLKT-BEI-LARG": ("Box", "16", "12", "9"),
+    "FD2-BLKT-BORD-LARG": ("Box", "16", "12", "8"),
+    "FD2-BLKT-GRY-LARG": ("Box", "20", "14", "11"),
+    "FD2-MBRF-BLK-M": ("Mailer", "16", "15", "0"),
+    "FD2-MBRF-BLK-S": ("Box", "12", "8", "6"),
+    "FD2-MBRF-BLK-XXL": ("Mailer", "14", "12", "0"),
+    "FD2-MTS-BLK-XL": ("Box", "12", "8", "6"),
+    "FD2-MTS-BLK-XXL": ("Mailer", "15", "12", "0"),
+    "FD2-MTS-ETH-M": ("Box", "24", "16", "12"),
+    "FD2-MTS-SPAP-M": ("Box", "24", "16", "12"),
+    "FD2-UBNE-BLK-1": ("Box", "12", "8", "6"),
+    "FD2-UBNE-NAV-1": ("Box", "12", "8", "6"),
+    "FD2-UBNE-WHT-1": ("Box", "14", "13", "3"),
+    "FD2-WTS-BLK-XL": ("Box", "12", "8", "6"),
+    "FD2-WTS-HNVY-L": ("Box", "12", "8", "6"),
+    "FD2-WTS-HNVY-M": ("Box", "12", "8", "6"),
+    "FD2-WTS-HNVY-XL": ("Box", "16", "12", "8"),
+    "FD3-MTS-BLK-L": ("Mailer", "16", "12", "0"),
+    "FD3-MTS-BLK-M": ("Box", "24", "16", "12"),
+    "LMB22-WTS-FGRN-M": ("Box", "12", "8", "6"),
+    "LMB22-WTS-FGRN-XXL": ("Box", "8", "6", "4"),
+    "WSTP-LTPPD-BLK": ("Box", "20", "14", "11"),
+}
 
 ALIASES = {
     "order_number": [
@@ -780,6 +851,11 @@ def shopify_by_order(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
 
 
 def package_for_sku(sku: str, qty: str = "1") -> dict[str, str]:
+    sku_key = cell_text(sku).upper()
+    if sku_key in SKU_PACKAGE_DEFAULTS:
+        package_type, length, width, height = SKU_PACKAGE_DEFAULTS[sku_key]
+        return {"Package Type": package_type, "Package Length": length, "Package Width": width, "Package Height": height}
+
     sku_norm = normalized(sku)
     qty_num = numeric_quantity(qty) or 1
     if "blkt" in sku_norm or qty_num > 1:
@@ -952,41 +1028,41 @@ def outbound_order_rows(file_id: str) -> list[dict[str, str]]:
     output: list[dict[str, str]] = []
     for source in source_rows:
         order = row_value(source, ["Shopify Order#", "Order Number", "Order #"])
-        first_name, last_name = split_name(row_value(source, ["Full Name", "Name", "Customer"]))
+        full_name = title_case_name(row_value(source, ["Full Name", "Name", "Customer"]))
         skus = split_skus(row_value(source, ["SKUs", "SKU", "Item SKU"]))
         if not skus:
             skus = [""]
         for sku in skus:
+            qty = choose_quantity("", row_value(source, ["Qty", "Quantity", "Item Quantity"]) or "1")
+            package = package_for_sku(sku, qty)
             output.append(
                 {
-                    "Order Number": order,
+                    "Order Number": f"{order} RET" if order and not order.endswith(" RET") else order,
                     "Order Date": "",
                     "Requested Service": "",
                     "Item SKU": sku,
                     "Item Unit Price": "",
-                    "Item Quantity": "1",
+                    "Item Quantity": qty,
                     "HS Code": "",
                     "Country Of Origin": "",
-                    "Company Name": "",
-                    "First Name": first_name,
-                    "Last Name": last_name,
-                    "Address Line 1": row_value(source, ["Address Line 1"]),
-                    "Address Line 2": row_value(source, ["Address Line 2"]),
-                    "City": row_value(source, ["City"]),
-                    "State/Province": row_value(source, ["State", "State/Province"]),
-                    "Zip/Postal Code": row_value(source, ["Zipcode", "Zip/Postal Code", "Zip"]),
-                    "Country": row_value(source, ["Country Code", "Country"]),
-                    "Email": "",
-                    "Phone": "",
+                    **HAVN_DESTINATION_FIELDS,
                     "Notes": "",
                     "Signature Required": "",
                     "Package SKU": "",
-                    "Package Type": "",
-                    "Package Length": "",
-                    "Package Width": "",
-                    "Package Height": "",
+                    "Package Type": package["Package Type"],
+                    "Package Length": package["Package Length"],
+                    "Package Width": package["Package Width"],
+                    "Package Height": package["Package Height"],
                     "Declared Value": "",
                     "Package #": "",
+                    "Origin Address Line 1": row_value(source, ["Address Line 1"]),
+                    "Origin Address Line 2": row_value(source, ["Address Line 2"]),
+                    "Origin City": row_value(source, ["City"]),
+                    "Origin State/Province": row_value(source, ["State", "State/Province"]),
+                    "Origin Zip/Postal Code": row_value(source, ["Zipcode", "Zip/Postal Code", "Zip"]),
+                    "Origin Country": row_value(source, ["Country Code", "Country"]) or "US",
+                    **HAVN_ORIGIN_DEFAULTS,
+                    "Origin Contact Name": full_name,
                 }
             )
     return output
@@ -1005,15 +1081,16 @@ def outbound_report_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     report: list[dict[str, str]] = []
     for row in rows:
         missing = []
-        for field in ["Order Number", "First Name", "Last Name", "Address Line 1", "City", "State/Province", "Zip/Postal Code", "Country", "Item SKU"]:
+        for field in ["Order Number", "First Name", "Last Name", "Address Line 1", "City", "State/Province", "Zip/Postal Code", "Country", "Item SKU", "Package Type", "Package Length", "Package Width", "Package Height", "Origin Address Line 1", "Origin City", "Origin State/Province", "Origin Zip/Postal Code", "Origin Country"]:
             if not row.get(field):
                 missing.append(field)
         report.append(
             {
                 "Order Number": row.get("Order Number", ""),
-                "Name": f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip(),
+                "Name": row.get("Origin Contact Name", ""),
                 "SKU": row.get("Item SKU", ""),
-                "Address": ", ".join([part for part in [row.get("Address Line 1", ""), row.get("Address Line 2", ""), row.get("City", ""), row.get("State/Province", ""), row.get("Zip/Postal Code", "")] if part]),
+                "Address": ", ".join([part for part in [row.get("Origin Address Line 1", ""), row.get("Origin Address Line 2", ""), row.get("Origin City", ""), row.get("Origin State/Province", ""), row.get("Origin Zip/Postal Code", "")] if part]),
+                "Package": " ".join([row.get("Package Type", ""), "x".join([row.get("Package Length", ""), row.get("Package Width", ""), row.get("Package Height", "")])]).strip(),
                 "Status": "Missing " + ", ".join(missing) if missing else "Ready",
             }
         )
@@ -1569,6 +1646,13 @@ HTML = r"""
       color: #243244;
     }
     button.secondary:hover { background: #cbd5e1; }
+    button.danger {
+      min-height: 30px;
+      padding: 0 10px;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    button.danger:hover { background: #fecaca; }
     button:disabled {
       opacity: .45;
       cursor: not-allowed;
@@ -1656,6 +1740,16 @@ HTML = r"""
       background: #fbfcfe;
       font-size: 12px;
     }
+    .list-input {
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 8px;
+      font: inherit;
+    }
+    .order-input { width: 180px; }
+    .sku-input { width: 190px; }
+    .qty-input { width: 72px; }
     .notice {
       padding: 12px 14px;
       border-radius: 8px;
@@ -1963,6 +2057,37 @@ HTML = r"""
       renderHavnList();
     });
 
+    havnListEl.addEventListener("change", event => {
+      if (!event.target.matches("[data-edit-havn-item]")) return;
+      saveHavnItemEdit(event.target);
+    });
+
+    havnListEl.addEventListener("keydown", event => {
+      if (!event.target.matches("[data-edit-havn-item]") || event.key !== "Enter") return;
+      event.preventDefault();
+      saveHavnItemEdit(event.target);
+      event.target.blur();
+    });
+
+    havnListEl.addEventListener("click", event => {
+      const button = event.target.closest("[data-remove-havn-item]");
+      if (!button) return;
+      const requestIndex = Number(button.dataset.requestIndex);
+      const itemIndex = Number(button.dataset.itemIndex);
+      const request = havnRequests[requestIndex];
+      const item = request?.items?.[itemIndex];
+      if (!request || !item) return;
+      const orderNumber = `${request.order_number} RET`;
+      if (!confirm(`Remove ${item.sku} from ${orderNumber}?`)) return;
+      request.items.splice(itemIndex, 1);
+      if (!request.items.length) {
+        havnRequests.splice(requestIndex, 1);
+      }
+      havnResultSection.classList.add("hidden");
+      havnStatusEl.textContent = `Removed ${item.sku} from ${orderNumber}.`;
+      renderHavnList();
+    });
+
     document.querySelector("#havnExport").addEventListener("click", async () => {
       if (!havnRequests.length) {
         havnStatusEl.textContent = "Add at least one Havn email first.";
@@ -2058,17 +2183,54 @@ HTML = r"""
         return;
       }
       const rows = [];
-      havnRequests.forEach(request => {
-        request.items.forEach(item => {
+      havnRequests.forEach((request, requestIndex) => {
+        request.items.forEach((item, itemIndex) => {
           rows.push({
-            "Order Number": `${request.order_number} RET`,
-            "SKU": item.sku,
-            "Qty": item.qty || "1",
+            "Order Number": `<input class="list-input order-input" data-edit-havn-item data-field="order_number" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(`${request.order_number} RET`)}" aria-label="Order number for ${escapeHtml(item.sku)}">`,
+            "SKU": `<input class="list-input sku-input" data-edit-havn-item data-field="sku" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(item.sku)}" aria-label="SKU for ${escapeHtml(`${request.order_number} RET`)}">`,
+            "Qty": `<input class="list-input qty-input" data-edit-havn-item data-field="qty" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(item.qty || "1")}" inputmode="numeric" aria-label="Quantity for ${escapeHtml(item.sku)}">`,
+            "Remove": `<button class="danger" type="button" data-remove-havn-item data-request-index="${requestIndex}" data-item-index="${itemIndex}">Remove</button>`,
           });
         });
       });
       havnListEl.className = "preview";
-      havnListEl.innerHTML = simpleTable(rows);
+      havnListEl.innerHTML = htmlTable(rows);
+    }
+
+    function saveHavnItemEdit(input) {
+      const requestIndex = Number(input.dataset.requestIndex);
+      const itemIndex = Number(input.dataset.itemIndex);
+      const field = input.dataset.field;
+      const request = havnRequests[requestIndex];
+      const item = request?.items?.[itemIndex];
+      if (!request || !item) return;
+      let value = input.value.trim();
+      if (field === "order_number") {
+        value = cleanHavnOrderNumber(value);
+        request.order_number = value;
+        renderHavnList();
+      } else if (field === "sku") {
+        value = value || item.sku;
+        item.sku = value;
+        input.value = value;
+      } else if (field === "qty") {
+        value = value || "1";
+        item.qty = value;
+        input.value = value;
+      }
+      havnResultSection.classList.add("hidden");
+      havnStatusEl.textContent = `Saved ${fieldLabel(field)} for ${item.sku}.`;
+    }
+
+    function cleanHavnOrderNumber(value) {
+      return value.replace(/\s+RET$/i, "").trim();
+    }
+
+    function fieldLabel(field) {
+      if (field === "order_number") return "order number";
+      if (field === "sku") return "SKU";
+      if (field === "qty") return "qty";
+      return "change";
     }
 
     function renderHavnResult(data) {
@@ -2143,6 +2305,19 @@ HTML = r"""
           <thead><tr>${columns.map(column => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead>
           <tbody>
             ${rows.map(row => `<tr>${columns.map(column => `<td>${escapeHtml(row[column] || "")}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function htmlTable(rows) {
+      if (!rows.length) return "";
+      const columns = Object.keys(rows[0]);
+      return `
+        <table>
+          <thead><tr>${columns.map(column => `<th>${escapeHtml(column)}</th>`).join("")}</tr></thead>
+          <tbody>
+            ${rows.map(row => `<tr>${columns.map(column => `<td>${row[column] || ""}</td>`).join("")}</tr>`).join("")}
           </tbody>
         </table>
       `;
@@ -2251,9 +2426,16 @@ HTML = r"""
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8776"))
-    address = ("127.0.0.1", port)
-    url = f"http://{address[0]}:{address[1]}/"
-    print(f"Shipment CSV Builder running at {url}")
-    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-    ThreadingHTTPServer(address, ShipmentHandler).serve_forever()
+    try:
+        port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8776"))
+        address = ("127.0.0.1", port)
+        url = f"http://{address[0]}:{address[1]}/"
+        if sys.stdout:
+            print(f"Shipment CSV Builder running at {url}")
+        if os.environ.get("SHIPMENT_CSV_OPEN_BROWSER", "1") != "0":
+            threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+        ThreadingHTTPServer(address, ShipmentHandler).serve_forever()
+    except Exception as exc:
+        with (BASE_DIR / "startup_error.log").open("w", encoding="utf-8") as handle:
+            handle.write(f"{type(exc).__name__}: {exc}\n")
+        raise
