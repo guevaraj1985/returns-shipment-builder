@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "0.1.5"
+APP_VERSION = "0.1.6"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -2543,13 +2543,13 @@ HTML = r"""
       --text: #10233f;
       --muted: #5f6f86;
       --line: #d9e3f0;
-      --brand: #1e90ff;
-      --brand-hover: #0f74d1;
-      --brand-soft: #edf3ff;
-      --brand-soft-hover: #dce8ff;
+      --brand: #050505;
+      --brand-hover: #242424;
+      --brand-soft: #f1f4f8;
+      --brand-soft-hover: #e4eaf2;
       --accent: #ffa970;
       --accent-dark: #f59231;
-      --focus: #9eb7e8;
+      --focus: #a7b4c6;
       --row-hover: #f8fbff;
       --success: #0f9f6e;
       --success-soft: #e8fbf3;
@@ -2785,6 +2785,59 @@ HTML = r"""
       color: #fff;
       box-shadow: 0 8px 18px rgba(5, 5, 5, 0.12);
     }
+    .theme-dock {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding-left: 10px;
+      border-left: 1px solid var(--line);
+    }
+    .theme-dock-label {
+      margin-right: 2px;
+      color: var(--muted);
+      font-family: var(--font-eyebrow);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .theme-choice {
+      min-height: 34px;
+      padding: 0 9px;
+      gap: 6px;
+      background: var(--brand-soft);
+      border-color: #d7e3f6;
+      color: var(--text);
+      letter-spacing: .04em;
+      box-shadow: none;
+    }
+    .theme-choice:hover, .theme-choice:focus-visible {
+      background: var(--brand-soft-hover);
+      border-color: var(--focus);
+      color: var(--text);
+      box-shadow: 0 7px 16px rgba(16, 35, 63, 0.08);
+    }
+    .theme-choice.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+      box-shadow: 0 7px 16px rgba(5, 5, 5, 0.14);
+    }
+    .theme-choice.active:hover, .theme-choice.active:focus-visible {
+      background: var(--brand-hover);
+      border-color: var(--brand-hover);
+      color: #fff;
+    }
+    .theme-swatch {
+      width: 10px;
+      height: 10px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--swatch);
+      box-shadow: 0 0 0 1px rgba(16, 35, 63, .16);
+    }
     .files {
       display: grid;
       gap: 16px;
@@ -2924,6 +2977,15 @@ HTML = r"""
       .mapping { grid-template-columns: 1fr; }
       .compact-grid, .result-grid { grid-template-columns: 1fr; }
       .manual-entry { grid-template-columns: 1fr; }
+      .theme-dock {
+        width: 100%;
+        margin-left: 0;
+        padding-left: 0;
+        padding-top: 8px;
+        border-left: 0;
+        border-top: 1px solid var(--line);
+        overflow-x: auto;
+      }
     }
   </style>
 </head>
@@ -2946,6 +3008,16 @@ HTML = r"""
       <button class="tab" id="bulkInboundTab">Onboarding</button>
       <button class="tab" id="lightsourceTab">Lightsource</button>
       <button class="tab" id="outboundTab">Outbound Replacement</button>
+      <div class="theme-dock" aria-label="Button color theme">
+        <span class="theme-dock-label">Buttons</span>
+        <button class="theme-choice active" type="button" data-theme-choice="default" title="Default black buttons"><span class="theme-swatch" style="--swatch:#050505"></span>Default</button>
+        <button class="theme-choice" type="button" data-theme-choice="dodger" title="Dodger blue mode"><span class="theme-swatch" style="--swatch:#1e90ff"></span>Dodger</button>
+        <button class="theme-choice" type="button" data-theme-choice="eagles" title="Midnight green mode"><span class="theme-swatch" style="--swatch:#004c54"></span>Eagles</button>
+        <button class="theme-choice" type="button" data-theme-choice="sunset" title="Sunset orange mode"><span class="theme-swatch" style="--swatch:#f97316"></span>Sunset</button>
+        <button class="theme-choice" type="button" data-theme-choice="grape" title="Grape purple mode"><span class="theme-swatch" style="--swatch:#7c3aed"></span>Grape</button>
+        <button class="theme-choice" type="button" data-theme-choice="mint" title="Mint green mode"><span class="theme-swatch" style="--swatch:#0f9f6e"></span>Mint</button>
+        <button class="theme-choice" type="button" id="randomTheme" title="Pick a random button color"><span class="theme-swatch" style="--swatch:linear-gradient(135deg,#1e90ff,#f97316,#0f9f6e)"></span>Random</button>
+      </div>
     </div>
 
     <div id="christyApp">
@@ -3136,6 +3208,13 @@ HTML = r"""
     document.querySelector("#bulkInboundTab").addEventListener("click", () => setAppTab("bulkInbound"));
     document.querySelector("#lightsourceTab").addEventListener("click", () => setAppTab("lightsource"));
     document.querySelector("#outboundTab").addEventListener("click", () => setAppTab("outbound"));
+    document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+      button.addEventListener("click", () => applyButtonTheme(button.dataset.themeChoice));
+    });
+    document.querySelector("#randomTheme").addEventListener("click", () => {
+      const choices = ["dodger", "eagles", "sunset", "grape", "mint", "berry", "copper", "sky"];
+      applyButtonTheme(choices[Math.floor(Math.random() * choices.length)]);
+    });
     document.querySelector("#closeApp").addEventListener("click", async () => {
       try {
         await fetch("/api/shutdown", { method: "POST" });
@@ -3157,6 +3236,38 @@ HTML = r"""
       document.querySelector("#lightsourceTab").classList.toggle("active", tabName === "lightsource");
       document.querySelector("#outboundTab").classList.toggle("active", tabName === "outbound");
     }
+
+    const buttonThemes = {
+      default: { brand: "#050505", hover: "#242424", soft: "#f1f4f8", softHover: "#e4eaf2", focus: "#a7b4c6" },
+      dodger: { brand: "#1e90ff", hover: "#0f74d1", soft: "#edf3ff", softHover: "#dce8ff", focus: "#9eb7e8" },
+      eagles: { brand: "#004c54", hover: "#00373d", soft: "#e8f4f5", softHover: "#cfe7ea", focus: "#7bb9bf" },
+      sunset: { brand: "#f97316", hover: "#ea580c", soft: "#fff7ed", softHover: "#ffedd5", focus: "#fdba74" },
+      grape: { brand: "#7c3aed", hover: "#6d28d9", soft: "#f3e8ff", softHover: "#e9d5ff", focus: "#c4b5fd" },
+      mint: { brand: "#0f9f6e", hover: "#0b7f58", soft: "#e8fbf3", softHover: "#d1fae5", focus: "#86efac" },
+      berry: { brand: "#be185d", hover: "#9d174d", soft: "#fdf2f8", softHover: "#fce7f3", focus: "#f9a8d4" },
+      copper: { brand: "#b45309", hover: "#92400e", soft: "#fffbeb", softHover: "#fef3c7", focus: "#fcd34d" },
+      sky: { brand: "#0369a1", hover: "#075985", soft: "#e0f2fe", softHover: "#bae6fd", focus: "#7dd3fc" },
+    };
+
+    function applyButtonTheme(themeName, shouldSave = true) {
+      const safeName = buttonThemes[themeName] ? themeName : "default";
+      const theme = buttonThemes[safeName];
+      const root = document.documentElement;
+      root.style.setProperty("--brand", theme.brand);
+      root.style.setProperty("--brand-hover", theme.hover);
+      root.style.setProperty("--brand-soft", theme.soft);
+      root.style.setProperty("--brand-soft-hover", theme.softHover);
+      root.style.setProperty("--focus", theme.focus);
+      document.querySelectorAll("[data-theme-choice]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.themeChoice === safeName);
+      });
+      document.querySelector("#randomTheme").classList.toggle("active", !document.querySelector(`[data-theme-choice="${safeName}"]`));
+      if (shouldSave) {
+        localStorage.setItem("returnsButtonTheme", safeName);
+      }
+    }
+
+    applyButtonTheme(localStorage.getItem("returnsButtonTheme") || "default", false);
 
     async function checkForUpdates() {
       try {
