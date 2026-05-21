@@ -6,6 +6,7 @@ Local browser app for building returns-related CSV imports.
 
 - Christy inbound shipment builder from a tabbed workbook or source spreadsheets.
 - Havn inbound shipment builder from pasted return-label request emails.
+- Bulk inbound builder from customer pack lists, BOLs, POs, CSV/Excel files, and searchable PDFs.
 - Outbound replacement order starter from `shopify_orders_shipping_skus.csv`.
 
 ## Run Locally

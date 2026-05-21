@@ -55,6 +55,198 @@ PLATFORM_FIELDS = [
     "Notes",
 ]
 
+BULK_INBOUND_FIELD_LABELS = {
+    "shipment_number": "Shipment # *",
+    "date_sent_out": "Date Sent Out *",
+    "receiving_date": "Receiving Date *",
+    "shipment_type": "Shipment Type",
+    "inbound_pallets": "Inbound Pallets",
+    "sku": "Product Variant SKU *",
+    "lot": "Lot #",
+    "cases": "Cases *",
+    "units_per_case": "Units per Case *",
+    "tracking": "Tracking Info",
+    "notes": "Notes",
+}
+
+BULK_INBOUND_ALIASES = {
+    "shipment_number": [
+        "shipment #",
+        "shipment number",
+        "shipment no",
+        "shipment id",
+        "po",
+        "po #",
+        "po number",
+        "purchase order",
+        "purchase order number",
+        "bol",
+        "bol #",
+        "bol number",
+        "bill of lading",
+        "reference",
+        "reference number",
+        "ref #",
+    ],
+    "date_sent_out": [
+        "date sent out",
+        "ship date",
+        "shipped date",
+        "date shipped",
+        "pickup date",
+        "sent date",
+        "departure date",
+    ],
+    "receiving_date": [
+        "receiving date",
+        "receive date",
+        "arrival date",
+        "delivery date",
+        "eta",
+        "expected date",
+        "expected receipt",
+    ],
+    "shipment_type": ["shipment type", "type", "inbound type", "move type"],
+    "inbound_pallets": [
+        "inbound pallets",
+        "pallets",
+        "pallet count",
+        "pallet qty",
+        "plt",
+        "plts",
+        "number of pallets",
+    ],
+    "sku": [
+        "product variant sku",
+        "variant sku",
+        "sku",
+        "item sku",
+        "product sku",
+        "part number",
+        "item number",
+        "item #",
+        "style",
+        "upc",
+        "asin",
+    ],
+    "lot": ["lot #", "lot", "lot number", "lot no", "batch", "batch number"],
+    "cases": [
+        "cases",
+        "case",
+        "case qty",
+        "case count",
+        "cartons",
+        "carton",
+        "carton qty",
+        "ctn",
+        "ctns",
+        "boxes",
+        "box qty",
+        "qty cases",
+    ],
+    "units_per_case": [
+        "units per case",
+        "units/case",
+        "units per carton",
+        "units/carton",
+        "pcs per case",
+        "pcs/case",
+        "each per case",
+        "eaches per case",
+        "case pack",
+        "pack size",
+        "inner pack",
+    ],
+    "tracking": [
+        "tracking info",
+        "tracking",
+        "tracking number",
+        "tracking #",
+        "pro number",
+        "pro #",
+        "carrier pro",
+        "seal",
+        "seal number",
+    ],
+    "notes": ["notes", "memo", "comments", "description", "product name", "item description"],
+}
+
+PRODUCT_VARIANT_SKU_ALIASES = [
+    "Variant SKU*",
+    "Variant SKU",
+    "Product Variant SKU",
+    "SKU",
+    "Item SKU",
+]
+
+PRODUCT_VARIANT_FIELDS = [
+    "Product Name*",
+    "Fulfillment SKU",
+    "Product Material",
+    "Customs Category",
+    "Country of Origin",
+    "Variant Name*",
+    "Variant SKU*",
+    "UPC",
+    "Active? (Y/N)",
+    "Ship in Product Packaging? (Y/N)",
+    "Sync Inventory? (Y/N)",
+    "Weight (oz)",
+    "Length",
+    "Width",
+    "Height",
+    "HS Code (numeric only)",
+    "Country of Origin",
+    "Warehouse Code*",
+    "Warehouse Location",
+    "Warehouse Qty",
+    "Lot ID",
+    "Vendor ID",
+    "Received Date",
+    "Production Date",
+]
+
+PRODUCT_LISTING_ALIASES = {
+    "product_name": ["Product Name", "Item Name", "Description", "Product", "Title"],
+    "fulfillment_sku": ["Fulfillment SKU", "Fulfillment Sku", "SKU", "Item SKU", "Product SKU"],
+    "material": ["Product Material", "Material", "Fabric"],
+    "customs_category": ["Customs Category", "Category", "Product Category"],
+    "country": ["Country of Origin", "COO", "Origin Country", "Made In"],
+    "variant_name": ["Variant Name", "Variant", "Option", "Size", "Color", "Description"],
+    "variant_sku": ["Variant SKU", "SKU", "Item SKU", "Product SKU", "Part Number", "Style"],
+    "upc": ["UPC", "Barcode", "GTIN", "EAN"],
+    "active": ["Active", "Active? (Y/N)", "Enabled"],
+    "packaging": ["Ship in Product Packaging", "SIPP", "Ships In Own Packaging"],
+    "sync_inventory": ["Sync Inventory", "Inventory Sync"],
+    "weight": ["Weight (oz)", "Weight", "Oz", "Ounces"],
+    "length": ["Length", "L"],
+    "width": ["Width", "W"],
+    "height": ["Height", "H"],
+    "hs_code": ["HS Code", "HTS Code", "Tariff Code", "Harmonized Code"],
+    "warehouse_code": ["Warehouse Code", "Warehouse", "WH Code"],
+    "warehouse_location": ["Warehouse Location", "Location", "Bin"],
+    "warehouse_qty": ["Warehouse Qty", "On Hand", "Inventory", "Quantity", "Qty"],
+    "lot": ["Lot ID", "Lot", "Batch"],
+    "vendor": ["Vendor ID", "Vendor", "Supplier"],
+    "received_date": ["Received Date", "Receipt Date"],
+    "production_date": ["Production Date", "Manufactured Date", "MFG Date"],
+}
+
+PDF_TABLE_HEADER_WORDS = [
+    "sku",
+    "item",
+    "part",
+    "style",
+    "upc",
+    "cases",
+    "cartons",
+    "qty",
+    "units",
+    "case",
+    "lot",
+    "pallet",
+]
+
 HAVN_ORDER_IMPORT_FIELDS = [
     "Order Number",
     "Order Date",
@@ -197,6 +389,37 @@ SKU_PACKAGE_DEFAULTS = {
     "LMB22-WTS-FGRN-XXL": ("Box", "8", "6", "4"),
     "WSTP-LTPPD-BLK": ("Box", "20", "14", "11"),
 }
+
+LIGHTSOURCE_SB_IMPORT_FIELDS = [
+    "Order Number",
+    "Order Date",
+    "Requested Service",
+    "Item SKU",
+    "Item Unit Price",
+    "Item Quantity",
+    "HS Code",
+    "Country Of Origin",
+    "Company Name",
+    "First Name",
+    "Last Name",
+    "Address Line 1",
+    "Address Line 2",
+    "City",
+    "State/Province",
+    "Zip/Postal Code",
+    "Country",
+    "Email",
+    "Phone",
+    "Notes",
+    "Signature Required",
+    "Package SKU",
+    "Package Type",
+    "Package Length",
+    "Package Width",
+    "Package Height",
+    "Declared Value",
+    "Package #",
+]
 
 ALIASES = {
     "order_number": [
@@ -382,6 +605,40 @@ def dataframe_to_rows(df: pd.DataFrame) -> list[dict[str, str]]:
     ]
 
 
+def dataframe_to_smart_rows(df: pd.DataFrame) -> tuple[list[dict[str, str]], dict[str, str]]:
+    raw = df.dropna(how="all")
+    if raw.empty:
+        return [], {}
+
+    raw = raw.fillna("")
+    best_index = 0
+    best_score = -1
+    max_scan = min(len(raw), 25)
+    alias_terms = [normalized(alias) for aliases in BULK_INBOUND_ALIASES.values() for alias in aliases]
+    for position in range(max_scan):
+        values = [cell_text(value) for value in raw.iloc[position].tolist()]
+        score = 0
+        for value in values:
+            value_norm = normalized(value)
+            if value_norm and any(alias == value_norm or alias in value_norm for alias in alias_terms):
+                score += 1
+        if score > best_score:
+            best_score = score
+            best_index = position
+
+    if best_score > 0:
+        headers = make_unique_headers([clean_header(value) for value in raw.iloc[best_index].tolist()])
+        body = raw.iloc[best_index + 1 :].copy()
+        body.columns = headers
+    else:
+        body = raw.copy()
+        body.columns = make_unique_headers([clean_header(c) for c in body.columns])
+
+    rows = dataframe_to_rows(body)
+    columns = list(rows[0].keys()) if rows else list(body.columns)
+    return rows, detect_bulk_inbound_columns(columns)
+
+
 def load_workbook_sheet_rows(file_id: str, sheet_name: str) -> list[dict[str, str]]:
     matches = list(UPLOAD_DIR.glob(f"{file_id}.*"))
     if not matches:
@@ -406,6 +663,441 @@ def find_column(row: dict[str, Any], candidates: list[str]) -> str:
 def row_value(row: dict[str, Any], candidates: list[str]) -> str:
     column = find_column(row, candidates)
     return value_from(row, column)
+
+
+def detect_bulk_inbound_columns(columns: list[str]) -> dict[str, str]:
+    by_norm = {normalized(column): column for column in columns}
+    detected: dict[str, str] = {}
+    for field, aliases in BULK_INBOUND_ALIASES.items():
+        winner = ""
+        for alias in aliases:
+            alias_norm = normalized(alias)
+            if alias_norm in by_norm:
+                winner = by_norm[alias_norm]
+                break
+        if not winner:
+            for column in columns:
+                column_norm = normalized(column)
+                if any(normalized(alias) and normalized(alias) in column_norm for alias in aliases):
+                    winner = column
+                    break
+        detected[field] = winner
+    return detected
+
+
+def first_row_value(rows: list[dict[str, str]], aliases: list[str]) -> str:
+    for row in rows:
+        value = row_value(row, aliases)
+        if value:
+            return value
+    return ""
+
+
+def normalize_date_for_upload(value: str, fallback: str = "") -> str:
+    text = cell_text(value)
+    if not text:
+        return fallback
+    parsed = pd.to_datetime(text, errors="coerce")
+    if pd.isna(parsed):
+        return text
+    return parsed.date().isoformat()
+
+
+def clean_number_for_upload(value: str, default: str = "") -> str:
+    text = cell_text(value).replace(",", "").strip()
+    if not text:
+        return default
+    match = re.search(r"-?\d+(?:\.\d+)?", text)
+    if not match:
+        return text
+    number = float(match.group(0))
+    return str(int(number)) if number.is_integer() else str(number)
+
+
+def load_product_variant_skus(file_id: str) -> set[str]:
+    if not file_id:
+        return set()
+    rows = load_file_rows(file_id)
+    skus: set[str] = set()
+    for row in rows:
+        sku = row_value(row, PRODUCT_VARIANT_SKU_ALIASES)
+        if sku:
+            skus.add(normalized(sku))
+    return skus
+
+
+def shipment_level_values(rows: list[dict[str, str]]) -> dict[str, str]:
+    return {
+        field: first_row_value(rows, aliases)
+        for field, aliases in BULK_INBOUND_ALIASES.items()
+        if field not in {"sku", "lot", "cases", "units_per_case", "notes"}
+    }
+
+
+def bulk_inbound_row_from_source(
+    row: dict[str, str],
+    mapping: dict[str, str],
+    defaults: dict[str, str],
+    product_skus: set[str],
+) -> tuple[dict[str, str] | None, str]:
+    today = date.today().isoformat()
+    sku = value_from(row, mapping.get("sku", ""))
+    cases = value_from(row, mapping.get("cases", ""))
+    units_per_case = value_from(row, mapping.get("units_per_case", ""))
+    lot = value_from(row, mapping.get("lot", ""))
+    notes = value_from(row, mapping.get("notes", ""))
+
+    if not sku and product_skus:
+        for value in row.values():
+            if normalized(value) in product_skus:
+                sku = cell_text(value)
+                break
+
+    if not any([sku, cases, units_per_case, lot]):
+        return None, ""
+
+    shipment_number = value_from(row, mapping.get("shipment_number", "")) or defaults.get("shipment_number", "")
+    date_sent = value_from(row, mapping.get("date_sent_out", "")) or defaults.get("date_sent_out", "")
+    receiving_date = value_from(row, mapping.get("receiving_date", "")) or defaults.get("receiving_date", "")
+    shipment_type = value_from(row, mapping.get("shipment_type", "")) or defaults.get("shipment_type", "")
+    pallets = value_from(row, mapping.get("inbound_pallets", "")) or defaults.get("inbound_pallets", "")
+    tracking = value_from(row, mapping.get("tracking", "")) or defaults.get("tracking", "")
+
+    upload_row = {
+        "Shipment # *": shipment_number,
+        "Date Sent Out *": normalize_date_for_upload(date_sent, today),
+        "Receiving Date *": normalize_date_for_upload(receiving_date, today),
+        "Shipment Type": shipment_type,
+        "Inbound Pallets": clean_number_for_upload(pallets),
+        "Product Variant SKU *": sku,
+        "Lot #": lot,
+        "Cases *": clean_number_for_upload(cases, "1"),
+        "Units per Case *": clean_number_for_upload(units_per_case, "1"),
+        "Tracking Info": tracking,
+        "Notes": notes,
+    }
+
+    missing = [field for field in ["Shipment # *", "Product Variant SKU *", "Cases *", "Units per Case *"] if not upload_row[field]]
+    if product_skus and sku and normalized(sku) not in product_skus:
+        missing.append("SKU not found in product variants")
+    return upload_row, ", ".join(missing)
+
+
+def write_bulk_inbound_upload(rows: list[dict[str, str]], prefix: str = "bulk_inbound_shipment_upload") -> Path:
+    output_path = OUTPUT_DIR / f"{prefix}_{uuid.uuid4().hex[:8]}.csv"
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=PLATFORM_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def write_bulk_inbound_report(report_rows_data: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"bulk_inbound_review_{uuid.uuid4().hex[:8]}.csv"
+    fieldnames = ["Source File", "Source Row", *PLATFORM_FIELDS, "Status"]
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(report_rows_data)
+    return output_path
+
+
+def product_variant_upload_row(source: dict[str, str]) -> list[str]:
+    def get(field: str) -> str:
+        return row_value(source, PRODUCT_LISTING_ALIASES[field])
+
+    product_name = get("product_name") or get("variant_name") or get("variant_sku")
+    variant_name = get("variant_name") or product_name
+    variant_sku = get("variant_sku") or get("fulfillment_sku")
+    country = get("country")
+    return [
+        product_name,
+        get("fulfillment_sku") or variant_sku,
+        get("material"),
+        get("customs_category"),
+        country,
+        variant_name,
+        variant_sku,
+        get("upc"),
+        (get("active") or "Y").upper()[:1],
+        (get("packaging") or "N").upper()[:1],
+        (get("sync_inventory") or "N").upper()[:1],
+        clean_number_for_upload(get("weight"), "0.00"),
+        clean_number_for_upload(get("length"), "0.00"),
+        clean_number_for_upload(get("width"), "0.00"),
+        clean_number_for_upload(get("height"), "0.00"),
+        digits_only(get("hs_code")),
+        country,
+        get("warehouse_code"),
+        get("warehouse_location"),
+        clean_number_for_upload(get("warehouse_qty"), "0"),
+        get("lot"),
+        get("vendor"),
+        normalize_date_for_upload(get("received_date")),
+        normalize_date_for_upload(get("production_date")),
+    ]
+
+
+def write_product_variants_upload(rows: list[list[str]]) -> Path:
+    output_path = OUTPUT_DIR / f"product_variants_upload_{uuid.uuid4().hex[:8]}.csv"
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(PRODUCT_VARIANT_FIELDS)
+        writer.writerows(rows)
+    return output_path
+
+
+def product_variant_report_rows(source_rows: list[dict[str, str]], upload_rows: list[list[str]]) -> list[dict[str, str]]:
+    report = []
+    for index, upload_row in enumerate(upload_rows, start=1):
+        missing = []
+        if not upload_row[0]:
+            missing.append("Product Name*")
+        if not upload_row[5]:
+            missing.append("Variant Name*")
+        if not upload_row[6]:
+            missing.append("Variant SKU*")
+        if not upload_row[17]:
+            missing.append("Warehouse Code*")
+        report.append(
+            {
+                "Source Row": str(index),
+                "Product Name": upload_row[0],
+                "Variant SKU": upload_row[6],
+                "UPC": upload_row[7],
+                "Warehouse Code": upload_row[17],
+                "Warehouse Qty": upload_row[19],
+                "Status": "Missing " + ", ".join(missing) if missing else "Ready",
+            }
+        )
+    return report
+
+
+def write_product_variant_report(rows: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"product_variants_review_{uuid.uuid4().hex[:8]}.csv"
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["Source Row", "Product Name", "Variant SKU", "UPC", "Warehouse Code", "Warehouse Qty", "Status"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def build_product_variants_from_upload(upload: UploadStorage) -> dict[str, Any]:
+    file_id, _filename = save_upload(upload)
+    source_rows = load_file_rows(file_id)
+    upload_rows = [product_variant_upload_row(row) for row in source_rows if any(row.values())]
+    upload_rows = [row for row in upload_rows if row[0] or row[6] or row[7]]
+    if not upload_rows:
+        raise ValueError("No product listing rows could be found in that file.")
+    report = product_variant_report_rows(source_rows, upload_rows)
+    output_path = write_product_variants_upload(upload_rows)
+    report_path = write_product_variant_report(report)
+    return {
+        "download_url": f"/download/{output_path.name}",
+        "report_url": f"/download/{report_path.name}",
+        "row_count": len(upload_rows),
+        "review_count": len([row for row in report if row["Status"] != "Ready"]),
+        "preview": [dict(zip(PRODUCT_VARIANT_FIELDS, row)) for row in upload_rows[:50]],
+        "report_preview": report[:100],
+    }
+
+
+def save_upload_to_disk(storage) -> Path:
+    file_id = uuid.uuid4().hex
+    safe_name = Path(storage.filename or f"upload-{file_id}").name
+    suffix = Path(safe_name).suffix.lower()
+    saved_path = UPLOAD_DIR / f"{file_id}{suffix or '.xlsx'}"
+    storage.save(saved_path)
+    return saved_path
+
+
+def read_smart_spreadsheet(path: Path) -> tuple[list[dict[str, str]], dict[str, str]]:
+    suffix = path.suffix.lower()
+    all_rows: list[dict[str, str]] = []
+    combined_mapping: dict[str, str] = {field: "" for field in BULK_INBOUND_FIELD_LABELS}
+
+    if suffix == ".csv":
+        frames = {"CSV": pd.read_csv(path, dtype=object, header=None)}
+    elif suffix in {".xlsx", ".xlsm", ".xls"}:
+        frames = pd.read_excel(path, sheet_name=None, dtype=object, header=None)
+    else:
+        raise ValueError(f"{path.name} is not a supported spreadsheet type.")
+
+    for sheet_name, frame in frames.items():
+        rows, mapping = dataframe_to_smart_rows(frame)
+        for field, column in mapping.items():
+            if column and not combined_mapping.get(field):
+                combined_mapping[field] = column
+        for index, row in enumerate(rows, start=1):
+            if any(row.values()):
+                row["_source_sheet"] = sheet_name
+                row["_source_row"] = str(index)
+                all_rows.append(row)
+    return all_rows, combined_mapping
+
+
+def extract_pdf_text(path: Path) -> str:
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise ValueError("PDF reading requires the pypdf package. Rebuild or install requirements.txt, then try again.") from exc
+
+    reader = PdfReader(str(path))
+    pages = []
+    for page in reader.pages:
+        pages.append(page.extract_text() or "")
+    return "\n".join(pages)
+
+
+def regex_label_value(text: str, aliases: list[str]) -> str:
+    for alias in aliases:
+        escaped = re.escape(alias).replace("\\ ", r"\s*")
+        match = re.search(rf"\b{escaped}\b\s*[:#-]?\s*([A-Za-z0-9][A-Za-z0-9 ./#_-]{{0,40}})", text, re.IGNORECASE)
+        if match:
+            value = match.group(1).strip()
+            value = re.split(r"\s{2,}|\n", value)[0].strip()
+            return value
+    return ""
+
+
+def pdf_defaults(text: str) -> dict[str, str]:
+    defaults = {}
+    for field in ["shipment_number", "date_sent_out", "receiving_date", "shipment_type", "inbound_pallets", "tracking"]:
+        defaults[field] = regex_label_value(text, BULK_INBOUND_ALIASES[field])
+    return defaults
+
+
+def likely_sku_token(value: str) -> bool:
+    token = cell_text(value).strip(" :,;")
+    if len(token) < 3:
+        return False
+    if token.lower() in {"sku", "item", "qty", "case", "cases", "carton", "cartons", "units", "pallet", "pallets"}:
+        return False
+    return bool(re.search(r"[A-Za-z]", token) and re.search(r"[A-Za-z0-9]", token))
+
+
+def pdf_line_to_row(line: str, defaults: dict[str, str]) -> dict[str, str] | None:
+    clean = re.sub(r"\s+", " ", line).strip()
+    if not clean or not any(word in normalized(clean) for word in PDF_TABLE_HEADER_WORDS):
+        return None
+    pieces = [piece.strip(" :,;") for piece in re.split(r"\s{2,}|\t+| \| ", line) if piece.strip()]
+    if len(pieces) <= 1:
+        pieces = [piece.strip(" :,;") for piece in clean.split(" ") if piece.strip()]
+
+    sku = ""
+    sku_index = -1
+    for index, piece in enumerate(pieces):
+        if likely_sku_token(piece) and not numeric_quantity(piece):
+            sku = piece
+            sku_index = index
+            break
+    if not sku:
+        return None
+
+    numbers = [clean_number_for_upload(piece) for piece in pieces[sku_index + 1 :] if clean_number_for_upload(piece)]
+    lot = ""
+    for piece in pieces:
+        if "lot" in normalized(piece):
+            lot = re.sub(r"(?i)\blot\b\s*[:#-]?\s*", "", piece).strip()
+            break
+
+    row = {
+        "shipment_number": defaults.get("shipment_number", ""),
+        "date_sent_out": defaults.get("date_sent_out", ""),
+        "receiving_date": defaults.get("receiving_date", ""),
+        "shipment_type": defaults.get("shipment_type", ""),
+        "inbound_pallets": defaults.get("inbound_pallets", ""),
+        "sku": sku,
+        "lot": lot,
+        "cases": numbers[0] if numbers else "",
+        "units_per_case": numbers[1] if len(numbers) > 1 else "",
+        "tracking": defaults.get("tracking", ""),
+        "notes": clean[:180],
+        "_source_sheet": "PDF",
+        "_source_row": "",
+    }
+    return row
+
+
+def read_smart_pdf(path: Path) -> tuple[list[dict[str, str]], dict[str, str]]:
+    text = extract_pdf_text(path)
+    defaults = pdf_defaults(text)
+    rows: list[dict[str, str]] = []
+    for index, line in enumerate(text.splitlines(), start=1):
+        row = pdf_line_to_row(line, defaults)
+        if row:
+            row["_source_row"] = str(index)
+            rows.append(row)
+    mapping = {field: field for field in BULK_INBOUND_FIELD_LABELS}
+    return rows, mapping
+
+
+def read_bulk_customer_document(storage) -> tuple[str, list[dict[str, str]], dict[str, str]]:
+    path = save_upload_to_disk(storage)
+    suffix = path.suffix.lower()
+    filename = Path(storage.filename or path.name).name
+    if suffix == ".pdf":
+        rows, mapping = read_smart_pdf(path)
+    else:
+        rows, mapping = read_smart_spreadsheet(path)
+    return filename, rows, mapping
+
+
+def build_bulk_inbound_from_uploads(
+    document_uploads: list[UploadStorage],
+    variant_upload: UploadStorage | None = None,
+) -> dict[str, Any]:
+    product_file_id = ""
+    product_skus: set[str] = set()
+    if variant_upload:
+        product_file_id, _filename = save_upload(variant_upload)
+        product_skus = load_product_variant_skus(product_file_id)
+
+    upload_rows: list[dict[str, str]] = []
+    report: list[dict[str, str]] = []
+    sources: list[dict[str, Any]] = []
+
+    for document in document_uploads:
+        filename, rows, mapping = read_bulk_customer_document(document)
+        defaults = shipment_level_values(rows)
+        sources.append(
+            {
+                "filename": filename,
+                "row_count": len(rows),
+                "detected": {BULK_INBOUND_FIELD_LABELS[field]: column for field, column in mapping.items() if column},
+            }
+        )
+        for row_index, row in enumerate(rows, start=1):
+            upload_row, issue = bulk_inbound_row_from_source(row, mapping, defaults, product_skus)
+            if not upload_row:
+                continue
+            status = "Ready" if not issue else f"Review: {issue}"
+            report.append(
+                {
+                    "Source File": filename,
+                    "Source Row": row.get("_source_row", str(row_index)),
+                    **upload_row,
+                    "Status": status,
+                }
+            )
+            if not issue or issue == "SKU not found in product variants":
+                upload_rows.append(upload_row)
+
+    if not report:
+        raise ValueError("No inbound shipment rows could be found. Try a spreadsheet with SKU/cases columns, or a PDF with item rows.")
+
+    upload_path = write_bulk_inbound_upload(upload_rows)
+    report_path = write_bulk_inbound_report(report)
+    return {
+        "download_url": f"/download/{upload_path.name}",
+        "report_url": f"/download/{report_path.name}",
+        "row_count": len(upload_rows),
+        "review_count": len([row for row in report if row["Status"] != "Ready"]),
+        "preview": upload_rows[:50],
+        "report_preview": report[:100],
+        "sources": sources,
+        "product_sku_count": len(product_skus),
+    }
 
 
 def digits_only(value: str) -> str:
@@ -998,7 +1690,155 @@ def havn_inbound_preview(requests: list[dict[str, Any]]) -> list[dict[str, str]]
             }
         )
     return preview
+def extract_lightsource_field(text: str, label: str) -> str:
+    match = re.search(rf"^{re.escape(label)}\s*:\s*(.+?)\s*$", text, re.IGNORECASE | re.MULTILINE)
+    return cell_text(match.group(1)) if match else ""
 
+
+def parse_lightsource_email(text: str) -> dict[str, Any]:
+    normalized_text = text.replace("\r\n", "\n").replace("\r", "\n")
+    order = extract_lightsource_field(normalized_text, "Print Order #")
+    if not order:
+        order_match = re.search(r"^Print\s+Order\s+#\s*([A-Za-z0-9-]+)\s*$", normalized_text, re.IGNORECASE | re.MULTILINE)
+        order = order_match.group(1).strip() if order_match else ""
+    order = order or extract_lightsource_field(normalized_text, "Order Number")
+    brand = extract_lightsource_field(normalized_text, "Brand") or "Acorn"
+    company_name = re.sub(r"\s+Biolabs\b", "", brand, flags=re.IGNORECASE).strip() or brand
+    recipient = extract_lightsource_field(normalized_text, "Recipient")
+    address = extract_lightsource_field(normalized_text, "Address")
+    city = extract_lightsource_field(normalized_text, "City")
+    state = extract_lightsource_field(normalized_text, "State/Province")
+    postal_code = extract_lightsource_field(normalized_text, "Postal Code")
+    country = extract_lightsource_field(normalized_text, "Country") or "US"
+    email = extract_lightsource_field(normalized_text, "Purchaser Email")
+    phone = digits_only(extract_lightsource_field(normalized_text, "Purchaser Phone"))
+
+    address_line_2 = ""
+    address_match = re.search(r"^Address\s*:\s*(.+?)\s*$", normalized_text, re.IGNORECASE | re.MULTILINE)
+    if address_match:
+        lines_after_address = normalized_text[address_match.end():].splitlines()
+        extra_lines: list[str] = []
+        for line in lines_after_address:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if re.match(r"^(City|State/Province|Postal Code|Country|Purchaser Email|Purchaser Phone)\s*:", stripped, re.IGNORECASE):
+                break
+            extra_lines.append(stripped)
+        address_line_2 = " ".join(extra_lines)
+
+    items: list[dict[str, str]] = []
+    item_matches = list(re.finditer(r"^---\s*ITEM\s+\d+\s*---\s*$", normalized_text, re.IGNORECASE | re.MULTILINE))
+    for index, match in enumerate(item_matches):
+        start = match.end()
+        end = item_matches[index + 1].start() if index + 1 < len(item_matches) else len(normalized_text)
+        block = normalized_text[start:end]
+        sku = extract_lightsource_field(block, "SKU")
+        if not sku:
+            continue
+        items.append(
+            {
+                "sku": sku,
+                "product_name": extract_lightsource_field(block, "Product Name"),
+                "qty": choose_quantity("", extract_lightsource_field(block, "Quantity") or "1"),
+            }
+        )
+
+    first_name, last_name = split_name(recipient)
+    return {
+        "order_number": order,
+        "brand": brand,
+        "company": company_name,
+        "recipient": recipient,
+        "first_name": first_name,
+        "last_name": last_name,
+        "address_line_1": address,
+        "address_line_2": address_line_2,
+        "city": city,
+        "state": state,
+        "postal_code": postal_code,
+        "country": country,
+        "email": email,
+        "phone": phone,
+        "items": items,
+        "raw": text,
+    }
+
+
+def lightsource_order_rows(requests: list[dict[str, Any]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for request_item in requests:
+        order = cell_text(request_item.get("order_number", ""))
+        company = cell_text(request_item.get("company", "")) or cell_text(request_item.get("brand", "")) or "Acorn"
+        recipient = cell_text(request_item.get("recipient", ""))
+        first_name = cell_text(request_item.get("first_name", ""))
+        last_name = cell_text(request_item.get("last_name", ""))
+        if recipient and (not first_name or not last_name):
+            first_name, last_name = split_name(recipient)
+        for item in request_item.get("items", []):
+            rows.append(
+                {
+                    "Order Number": order,
+                    "Order Date": "",
+                    "Requested Service": "",
+                    "Item SKU": cell_text(item.get("sku", "")),
+                    "Item Unit Price": "",
+                    "Item Quantity": choose_quantity("", cell_text(item.get("qty", "1")) or "1"),
+                    "HS Code": "",
+                    "Country Of Origin": "",
+                    "Company Name": company,
+                    "First Name": first_name,
+                    "Last Name": last_name,
+                    "Address Line 1": cell_text(request_item.get("address_line_1", "")),
+                    "Address Line 2": cell_text(request_item.get("address_line_2", "")),
+                    "City": cell_text(request_item.get("city", "")),
+                    "State/Province": cell_text(request_item.get("state", "")),
+                    "Zip/Postal Code": cell_text(request_item.get("postal_code", "")),
+                    "Country": cell_text(request_item.get("country", "")) or "US",
+                    "Email": cell_text(request_item.get("email", "")),
+                    "Phone": digits_only(cell_text(request_item.get("phone", ""))),
+                    "Notes": "",
+                    "Signature Required": "",
+                    "Package SKU": "",
+                    "Package Type": "",
+                    "Package Length": "",
+                    "Package Width": "",
+                    "Package Height": "",
+                    "Declared Value": "",
+                    "Package #": "",
+                }
+            )
+    return rows
+
+
+def write_lightsource_order_import(requests: list[dict[str, Any]]) -> Path:
+    output_path = OUTPUT_DIR / f"Lightsource_SB_Import_{uuid.uuid4().hex[:8]}.csv"
+    rows = lightsource_order_rows(requests)
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=LIGHTSOURCE_SB_IMPORT_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def lightsource_report_rows(requests: list[dict[str, Any]]) -> list[dict[str, str]]:
+    report: list[dict[str, str]] = []
+    for row in lightsource_order_rows(requests):
+        missing = []
+        for field in ["Order Number", "Item SKU", "Item Quantity", "First Name", "Last Name", "Address Line 1", "City", "State/Province", "Zip/Postal Code", "Country", "Email", "Phone"]:
+            if not row.get(field):
+                missing.append(field)
+        report.append(
+            {
+                "Order Number": row.get("Order Number", ""),
+                "Name": f"{row.get('First Name', '')} {row.get('Last Name', '')}".strip(),
+                "SKU": row.get("Item SKU", ""),
+                "Qty": row.get("Item Quantity", ""),
+                "Address": ", ".join([part for part in [row.get("Address Line 1", ""), row.get("Address Line 2", ""), row.get("City", ""), row.get("State/Province", ""), row.get("Zip/Postal Code", "")] if part]),
+                "Status": "Missing " + ", ".join(missing) if missing else "Ready",
+            }
+        )
+    return report
 
 def split_name(full_name: str) -> tuple[str, str]:
     name = title_case_name(full_name)
@@ -1354,6 +2194,18 @@ class ShipmentHandler(BaseHTTPRequestHandler):
         if self.path == "/api/havn/export":
             self.handle_havn_export()
             return
+        if self.path == "/api/bulk-inbound/generate":
+            self.handle_bulk_inbound_generate()
+            return
+        if self.path == "/api/product-variants/generate":
+            self.handle_product_variants_generate()
+            return
+        if self.path == "/api/lightsource/parse":
+            self.handle_lightsource_parse()
+            return
+        if self.path == "/api/lightsource/export":
+            self.handle_lightsource_export()
+            return
         if self.path == "/api/outbound/generate":
             self.handle_outbound_generate()
             return
@@ -1490,6 +2342,59 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             }
         )
 
+    def handle_bulk_inbound_generate(self) -> None:
+        try:
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            document_fields = form["documents"] if "documents" in form else []
+            if not isinstance(document_fields, list):
+                document_fields = [document_fields]
+            documents = [
+                UploadStorage(field.filename or "document", field.file)
+                for field in document_fields
+                if getattr(field, "filename", None)
+            ]
+            variant_field = form["product_variants"] if "product_variants" in form else None
+            variant_upload = None
+            if variant_field is not None and getattr(variant_field, "filename", None):
+                variant_upload = UploadStorage(variant_field.filename, variant_field.file)
+            if not documents:
+                self.send_json({"error": "Upload at least one customer document first."}, HTTPStatus.BAD_REQUEST)
+                return
+            result = build_bulk_inbound_from_uploads(documents, variant_upload)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(result)
+
+    def handle_product_variants_generate(self) -> None:
+        try:
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            field = form["file"] if "file" in form else None
+            if field is None or not getattr(field, "filename", None):
+                self.send_json({"error": "Upload a customer product listing CSV or Excel file first."}, HTTPStatus.BAD_REQUEST)
+                return
+            result = build_product_variants_from_upload(UploadStorage(field.filename, field.file))
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(result)
+
     def handle_outbound_generate(self) -> None:
         try:
             form = cgi.FieldStorage(
@@ -1512,6 +2417,48 @@ class ShipmentHandler(BaseHTTPRequestHandler):
                 return
             output_path = write_outbound_order_import(rows)
             report = outbound_report_rows(rows)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(
+            {
+                "download_url": f"/download/{output_path.name}",
+                "row_count": len(rows),
+                "preview": rows[:50],
+                "report_preview": report[:100],
+            }
+        )
+
+    def handle_lightsource_parse(self) -> None:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            parsed = parse_lightsource_email(payload.get("text", ""))
+            if not parsed["order_number"] or not parsed["items"]:
+                self.send_json(
+                    {
+                        "error": "Could not find both a print order number and at least one item SKU in that pasted email.",
+                        "parsed": parsed,
+                    },
+                    HTTPStatus.BAD_REQUEST,
+                )
+                return
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(parsed)
+
+    def handle_lightsource_export(self) -> None:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            requests = payload.get("requests", [])
+            if not requests:
+                self.send_json({"error": "Add at least one Lightsource order email first."}, HTTPStatus.BAD_REQUEST)
+                return
+            output_path = write_lightsource_order_import(requests)
+            rows = lightsource_order_rows(requests)
+            report = lightsource_report_rows(requests)
         except Exception as exc:
             self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -1556,17 +2503,40 @@ HTML = r"""
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inbound Shipment CSV Builder</title>
+  <title>Returns Shipment Builder</title>
   <style>
     :root {
-      --bg: #f7f8fb;
+      color-scheme: light;
+      --bg: #f7f9fc;
       --panel: #ffffff;
-      --ink: #17202a;
-      --muted: #687386;
-      --line: #dbe1ea;
-      --accent: #f59231;
-      --accent-dark: #d97814;
-      --warn: #9a3412;
+      --surface: #ffffff;
+      --surface-soft: #f7faff;
+      --ink: #10233f;
+      --text: #10233f;
+      --muted: #5f6f86;
+      --line: #d9e3f0;
+      --brand: #050505;
+      --brand-hover: #242424;
+      --brand-soft: #edf3ff;
+      --brand-soft-hover: #dce8ff;
+      --accent: #ffa970;
+      --accent-dark: #f59231;
+      --focus: #9eb7e8;
+      --row-hover: #f8fbff;
+      --success: #0f9f6e;
+      --success-soft: #e8fbf3;
+      --danger: #b42318;
+      --danger-soft: #fff1f2;
+      --warn: #b7791f;
+      --warning-soft: #fff8e8;
+      --shadow: 0 8px 22px rgba(16, 35, 63, 0.06);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --font-eyebrow: "Messina Sans Mono", "Courier New", monospace;
+      --font-heading: "Copernicus", Georgia, serif;
+      --font-subheading: "Messina Sans", "Segoe UI", Arial, sans-serif;
+      --font-body: "Messina Sans", "Segoe UI", Arial, sans-serif;
+      --font-mono: "Messina Sans Mono", "Courier New", monospace;
     }
     * { box-sizing: border-box; }
     body {
@@ -1574,12 +2544,16 @@ HTML = r"""
       min-height: 100vh;
       background: var(--bg);
       color: var(--ink);
-      font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+      font: 14px/1.45 var(--font-body);
     }
     header {
-      padding: 24px 32px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 12px 24px;
       border-bottom: 1px solid var(--line);
       background: #ffffff;
+      box-shadow: 0 1px 0 rgba(16, 35, 63, 0.08);
     }
     .header-top {
       display: flex;
@@ -1589,36 +2563,81 @@ HTML = r"""
     }
     h1 {
       margin: 0 0 6px;
-      font-size: 24px;
+      font-family: var(--font-heading);
+      font-size: 26px;
+      line-height: 1.05;
       font-weight: 700;
-      letter-spacing: 0;
+      letter-spacing: -0.02em;
+      color: #000;
     }
     .subtle { color: var(--muted); }
+    .brand-kicker {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-family: var(--font-eyebrow);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
     main {
-      width: min(1180px, calc(100vw - 32px));
-      margin: 24px auto 48px;
+      width: min(1240px, calc(100vw - 40px));
+      margin: 22px auto 64px;
       display: grid;
       gap: 18px;
     }
     section {
       background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 18px;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    .compact-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .tool-panel {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .tool-panel h2 {
+      margin-bottom: 2px;
+    }
+    .tool-panel input[type=file] {
+      padding: 12px;
+    }
+    .helper {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
     }
     h2 {
       margin: 0 0 14px;
-      font-size: 16px;
-      letter-spacing: 0;
+      font-family: var(--font-heading);
+      font-size: 20px;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--text);
     }
     input[type=file], textarea {
       display: block;
       width: 100%;
       padding: 18px;
-      border: 1px dashed #9aa7b7;
-      border-radius: 8px;
-      background: #fbfcfe;
+      border: 1px dashed #b8c7da;
+      border-radius: var(--radius-md);
+      background: #ffffff;
       font: inherit;
+      transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
     }
     textarea {
       min-height: 180px;
@@ -1630,29 +2649,51 @@ HTML = r"""
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 38px;
-      padding: 0 14px;
-      border: 0;
-      border-radius: 6px;
-      background: var(--accent);
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--brand);
+      border-radius: var(--radius-sm);
+      background: var(--brand);
       color: #fff;
-      font-weight: 650;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
       text-decoration: none;
       cursor: pointer;
+      transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
     }
-    button:hover, .download:hover { background: var(--accent-dark); }
+    button:hover, button:focus-visible {
+      background: var(--brand-hover);
+      border-color: var(--brand-hover);
+      box-shadow: 0 8px 18px rgba(5, 5, 5, 0.12);
+    }
+    .download {
+      background: var(--brand-soft);
+      border-color: #d7e3f6;
+      color: var(--text);
+    }
+    .download:hover, .download:focus-visible {
+      background: var(--brand-soft-hover);
+      border-color: var(--focus);
+      color: var(--text);
+      box-shadow: 0 7px 16px rgba(16, 35, 63, 0.08);
+    }
     button.secondary {
-      background: #e8eef5;
-      color: #243244;
+      background: var(--brand-soft);
+      border-color: #d7e3f6;
+      color: var(--text);
     }
-    button.secondary:hover { background: #cbd5e1; }
+    button.secondary:hover { background: var(--brand-soft-hover); border-color: var(--focus); color: var(--text); }
     button.danger {
       min-height: 30px;
       padding: 0 10px;
-      background: #fee2e2;
-      color: #991b1b;
+      background: var(--danger-soft);
+      border-color: #fecdd3;
+      color: var(--danger);
     }
-    button.danger:hover { background: #fecaca; }
+    button.danger:hover { background: #ffe4e6; color: var(--danger); border-color: #fda4af; }
     button:disabled {
       opacity: .45;
       cursor: not-allowed;
@@ -1665,17 +2706,30 @@ HTML = r"""
       margin-top: 14px;
     }
     .tabs {
+      position: sticky;
+      top: 74px;
+      z-index: 15;
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(247, 249, 252, 0.94);
+      box-shadow: 0 8px 20px rgba(16, 35, 63, 0.04);
+      backdrop-filter: blur(8px);
     }
     .tab {
-      background: #e8eef5;
-      color: #243244;
+      min-width: 112px;
+      background: #fff;
+      border-color: var(--line);
+      color: var(--text);
     }
     .tab.active {
-      background: var(--accent);
+      background: var(--brand);
+      border-color: var(--brand);
       color: #fff;
+      box-shadow: 0 7px 16px rgba(5, 5, 5, 0.14);
     }
     .files {
       display: grid;
@@ -1683,12 +2737,13 @@ HTML = r"""
     }
     .file {
       border: 1px solid var(--line);
-      border-radius: 8px;
+      border-radius: var(--radius-md);
       overflow: hidden;
+      background: #fff;
     }
     .file-title {
       padding: 12px 14px;
-      background: #eef4f7;
+      background: #f6f8fb;
       font-weight: 700;
       display: flex;
       justify-content: space-between;
@@ -1704,31 +2759,37 @@ HTML = r"""
       display: grid;
       gap: 5px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 650;
     }
-    select {
+    select, .list-input {
       width: 100%;
-      min-height: 36px;
+      min-height: 38px;
       border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 0 8px;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
       background: #fff;
       color: var(--ink);
       font: inherit;
+      transition: border-color .16s ease, box-shadow .16s ease;
     }
     .preview {
       overflow: auto;
-      border-top: 1px solid var(--line);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      max-height: 360px;
+      box-shadow: 0 6px 18px rgba(16, 35, 63, 0.04);
     }
     table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0;
       min-width: 760px;
+      background: #fff;
     }
     th, td {
       border-bottom: 1px solid #edf1f5;
-      padding: 8px 10px;
+      padding: 9px 10px;
       text-align: left;
       white-space: nowrap;
       max-width: 240px;
@@ -1737,31 +2798,36 @@ HTML = r"""
     }
     th {
       color: #344255;
-      background: #fbfcfe;
+      background: #f6f8fb;
       font-size: 12px;
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
     .list-input {
       min-height: 30px;
       border: 1px solid var(--line);
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       padding: 0 8px;
       font: inherit;
     }
     .order-input { width: 180px; }
     .sku-input { width: 190px; }
     .qty-input { width: 72px; }
+    tbody tr:hover td { background: var(--row-hover); }
     .notice {
       padding: 12px 14px;
-      border-radius: 8px;
-      background: #fff7ed;
+      border-radius: var(--radius-md);
+      background: var(--warning-soft);
       color: var(--warn);
       border: 1px solid #fed7aa;
     }
     .success {
       padding: 14px;
       border: 1px solid #b7e4d5;
-      background: #f0fdf9;
-      border-radius: 8px;
+      background: var(--success-soft);
+      border-radius: var(--radius-md);
     }
     .update-banner {
       display: none;
@@ -1775,12 +2841,34 @@ HTML = r"""
       font-weight: 700;
     }
     tr.problem td {
-      background: #fff7ed;
+      background: var(--warning-soft);
+    }
+    .danger {
+      background: var(--danger-soft);
+      border-color: #fecdd3;
+      color: var(--danger);
+      min-height: 34px;
+      padding-inline: 10px;
+    }
+    .danger:hover, .danger:focus-visible {
+      background: #ffe4e6;
+      border-color: #fda4af;
+      color: var(--danger);
+      box-shadow: 0 7px 16px rgba(180, 35, 24, .08);
+    }
+    input[type=file]:hover, textarea:hover, select:hover, .list-input:hover {
+      border-color: var(--focus);
+    }
+    input[type=file]:focus-visible, textarea:focus-visible, select:focus-visible,
+    .list-input:focus-visible, button:focus-visible, .download:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
     .hidden { display: none; }
     @media (max-width: 860px) {
       header { padding-inline: 18px; }
       .mapping { grid-template-columns: 1fr; }
+      .compact-grid, .result-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1789,8 +2877,9 @@ HTML = r"""
   <header>
     <div class="header-top">
       <div>
-        <h1>Inbound Shipment CSV Builder</h1>
-        <div class="subtle">Upload one tabbed workbook or three spreadsheets, confirm the columns when needed, then export the platform-ready CSV.</div>
+        <span class="brand-kicker">Soapbox Operations</span>
+        <h1>Returns Shipment Builder</h1>
+        <div class="subtle">Build inbound returns, onboarding imports, and replacement order CSVs from one local workspace.</div>
       </div>
       <button class="secondary" id="closeApp" type="button">Close App</button>
     </div>
@@ -1799,6 +2888,8 @@ HTML = r"""
     <div class="tabs">
       <button class="tab active" id="christyTab">Christy / Spreadsheet Upload</button>
       <button class="tab" id="havnTab">Havn Email Paste</button>
+      <button class="tab" id="bulkInboundTab">Onboarding</button>
+      <button class="tab" id="lightsourceTab">Lightsource</button>
       <button class="tab" id="outboundTab">Outbound Replacement</button>
     </div>
 
@@ -1851,6 +2942,71 @@ HTML = r"""
       </section>
     </div>
 
+    <div id="bulkInboundApp" class="hidden">
+      <div class="compact-grid">
+        <section class="tool-panel">
+          <h2>Product Setup</h2>
+          <p class="helper">Convert a customer product listing into the product variants import CSV.</p>
+          <input id="productListingFile" type="file" accept=".csv,.xlsx,.xls,.xlsm">
+          <div class="row">
+            <button id="productVariantsGenerate">Create Product CSV</button>
+            <span id="productVariantsStatus" class="subtle"></span>
+          </div>
+        </section>
+
+        <section class="tool-panel">
+          <h2>Inbound Shipment</h2>
+          <p class="helper">Convert a pack list, BOL, PO, CSV, Excel, or searchable PDF into the bulk inbound upload.</p>
+          <label>Customer document
+            <input id="bulkDocuments" type="file" multiple accept=".xlsx,.xls,.xlsm,.csv,.pdf">
+          </label>
+          <label>Product variants for SKU check
+            <input id="bulkProductVariants" type="file" accept=".csv,.xlsx,.xls,.xlsm">
+          </label>
+          <div class="row">
+            <button id="bulkInboundGenerate">Create Inbound CSV</button>
+            <span id="bulkInboundStatus" class="subtle"></span>
+          </div>
+        </section>
+      </div>
+
+      <div class="result-grid">
+        <section id="productVariantsResultSection" class="hidden">
+          <h2>Product Result</h2>
+          <div id="productVariantsResult"></div>
+        </section>
+        <section id="bulkInboundResultSection" class="hidden">
+          <h2>Inbound Result</h2>
+          <div id="bulkInboundResult"></div>
+        </section>
+      </div>
+    </div>
+
+    <div id="lightsourceApp" class="hidden">
+      <section>
+        <h2>Lightsource Email</h2>
+        <textarea id="lightsourceEmail" placeholder="Paste one Lightsource print order email here..."></textarea>
+        <div class="row">
+          <button id="lightsourceAdd">Add Email to List</button>
+          <button id="lightsourceClear" class="tab">Clear List</button>
+          <span id="lightsourceStatus" class="subtle"></span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Lightsource Order List</h2>
+        <div id="lightsourceList" class="subtle">No Lightsource emails added yet.</div>
+        <div class="row">
+          <button id="lightsourceExport">Generate SB Import CSV</button>
+        </div>
+      </section>
+
+      <section id="lightsourceResultSection" class="hidden">
+        <h2>Lightsource Result</h2>
+        <div id="lightsourceResult"></div>
+      </section>
+    </div>
+
     <div id="outboundApp" class="hidden">
       <section>
         <h2>Outbound Replacement Order</h2>
@@ -1879,6 +3035,7 @@ HTML = r"""
     let analyzedWorkbook = null;
     let currentMode = "";
     let havnRequests = [];
+    let lightsourceRequests = [];
 
     const statusEl = document.querySelector("#status");
     const filesEl = document.querySelector("#files");
@@ -1890,6 +3047,16 @@ HTML = r"""
     const havnListEl = document.querySelector("#havnList");
     const havnResultSection = document.querySelector("#havnResultSection");
     const havnResultEl = document.querySelector("#havnResult");
+    const productVariantsStatusEl = document.querySelector("#productVariantsStatus");
+    const productVariantsResultSection = document.querySelector("#productVariantsResultSection");
+    const productVariantsResultEl = document.querySelector("#productVariantsResult");
+    const bulkInboundStatusEl = document.querySelector("#bulkInboundStatus");
+    const bulkInboundResultSection = document.querySelector("#bulkInboundResultSection");
+    const bulkInboundResultEl = document.querySelector("#bulkInboundResult");
+    const lightsourceStatusEl = document.querySelector("#lightsourceStatus");
+    const lightsourceListEl = document.querySelector("#lightsourceList");
+    const lightsourceResultSection = document.querySelector("#lightsourceResultSection");
+    const lightsourceResultEl = document.querySelector("#lightsourceResult");
     const outboundStatusEl = document.querySelector("#outboundStatus");
     const outboundResultSection = document.querySelector("#outboundResultSection");
     const outboundResultEl = document.querySelector("#outboundResult");
@@ -1899,6 +3066,8 @@ HTML = r"""
 
     document.querySelector("#christyTab").addEventListener("click", () => setAppTab("christy"));
     document.querySelector("#havnTab").addEventListener("click", () => setAppTab("havn"));
+    document.querySelector("#bulkInboundTab").addEventListener("click", () => setAppTab("bulkInbound"));
+    document.querySelector("#lightsourceTab").addEventListener("click", () => setAppTab("lightsource"));
     document.querySelector("#outboundTab").addEventListener("click", () => setAppTab("outbound"));
     document.querySelector("#closeApp").addEventListener("click", async () => {
       try {
@@ -1912,9 +3081,13 @@ HTML = r"""
     function setAppTab(tabName) {
       document.querySelector("#christyApp").classList.toggle("hidden", tabName !== "christy");
       document.querySelector("#havnApp").classList.toggle("hidden", tabName !== "havn");
+      document.querySelector("#bulkInboundApp").classList.toggle("hidden", tabName !== "bulkInbound");
+      document.querySelector("#lightsourceApp").classList.toggle("hidden", tabName !== "lightsource");
       document.querySelector("#outboundApp").classList.toggle("hidden", tabName !== "outbound");
       document.querySelector("#christyTab").classList.toggle("active", tabName === "christy");
       document.querySelector("#havnTab").classList.toggle("active", tabName === "havn");
+      document.querySelector("#bulkInboundTab").classList.toggle("active", tabName === "bulkInbound");
+      document.querySelector("#lightsourceTab").classList.toggle("active", tabName === "lightsource");
       document.querySelector("#outboundTab").classList.toggle("active", tabName === "outbound");
     }
 
@@ -2115,6 +3288,64 @@ HTML = r"""
       }
     });
 
+    document.querySelector("#bulkInboundGenerate").addEventListener("click", async () => {
+      const documents = [...document.querySelector("#bulkDocuments").files];
+      const productVariants = document.querySelector("#bulkProductVariants").files[0];
+      bulkInboundResultSection.classList.add("hidden");
+      if (!documents.length) {
+        bulkInboundStatusEl.textContent = "Upload at least one customer document first.";
+        return;
+      }
+      bulkInboundStatusEl.textContent = "Reading customer documents...";
+      document.querySelector("#bulkInboundGenerate").disabled = true;
+      const form = new FormData();
+      documents.forEach(file => form.append("documents", file));
+      if (productVariants) {
+        form.append("product_variants", productVariants);
+      }
+      try {
+        const response = await fetch("/api/bulk-inbound/generate", { method: "POST", body: form });
+        const data = await response.json();
+        if (!response.ok) {
+          bulkInboundStatusEl.textContent = data.error || "Could not generate the bulk inbound CSV.";
+          return;
+        }
+        bulkInboundStatusEl.textContent = "Bulk inbound CSV and review report are ready.";
+        renderBulkInboundResult(data);
+      } catch (error) {
+        bulkInboundStatusEl.textContent = "The server stopped responding while reading the customer documents.";
+      } finally {
+        document.querySelector("#bulkInboundGenerate").disabled = false;
+      }
+    });
+
+    document.querySelector("#productVariantsGenerate").addEventListener("click", async () => {
+      const file = document.querySelector("#productListingFile").files[0];
+      productVariantsResultSection.classList.add("hidden");
+      if (!file) {
+        productVariantsStatusEl.textContent = "Upload a customer product listing first.";
+        return;
+      }
+      productVariantsStatusEl.textContent = "Reading product listing...";
+      document.querySelector("#productVariantsGenerate").disabled = true;
+      const form = new FormData();
+      form.append("file", file);
+      try {
+        const response = await fetch("/api/product-variants/generate", { method: "POST", body: form });
+        const data = await response.json();
+        if (!response.ok) {
+          productVariantsStatusEl.textContent = data.error || "Could not generate the product variants CSV.";
+          return;
+        }
+        productVariantsStatusEl.textContent = "Product variants CSV and review report are ready.";
+        renderProductVariantsResult(data);
+      } catch (error) {
+        productVariantsStatusEl.textContent = "The server stopped responding while reading the product listing.";
+      } finally {
+        document.querySelector("#productVariantsGenerate").disabled = false;
+      }
+    });
+
     document.querySelector("#outboundGenerate").addEventListener("click", async () => {
       const file = document.querySelector("#outboundFile").files[0];
       outboundResultSection.classList.add("hidden");
@@ -2139,6 +3370,105 @@ HTML = r"""
         outboundStatusEl.textContent = "The server stopped responding while generating the outbound import.";
       } finally {
         document.querySelector("#outboundGenerate").disabled = false;
+      }
+    });
+
+    document.querySelector("#lightsourceAdd").addEventListener("click", async () => {
+      const text = document.querySelector("#lightsourceEmail").value.trim();
+      lightsourceResultSection.classList.add("hidden");
+      if (!text) {
+        lightsourceStatusEl.textContent = "Paste one Lightsource email first.";
+        return;
+      }
+      lightsourceStatusEl.textContent = "Reading email...";
+      document.querySelector("#lightsourceAdd").disabled = true;
+      try {
+        const response = await fetch("/api/lightsource/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          lightsourceStatusEl.textContent = data.error || "Could not parse that email.";
+          return;
+        }
+        if (lightsourceRequests.some(request => request.order_number.trim().toUpperCase() === data.order_number.trim().toUpperCase())) {
+          lightsourceStatusEl.textContent = `Already added: ${data.order_number}.`;
+          return;
+        }
+        lightsourceRequests.push(data);
+        document.querySelector("#lightsourceEmail").value = "";
+        lightsourceStatusEl.textContent = `Added ${data.order_number} with ${data.items.length} item${data.items.length === 1 ? "" : "s"}.`;
+        renderLightsourceList();
+      } catch (error) {
+        lightsourceStatusEl.textContent = "The server stopped responding while parsing the email.";
+      } finally {
+        document.querySelector("#lightsourceAdd").disabled = false;
+      }
+    });
+
+    document.querySelector("#lightsourceClear").addEventListener("click", () => {
+      lightsourceRequests = [];
+      lightsourceResultSection.classList.add("hidden");
+      lightsourceStatusEl.textContent = "List cleared.";
+      renderLightsourceList();
+    });
+
+    lightsourceListEl.addEventListener("change", event => {
+      if (!event.target.matches("[data-edit-lightsource-item]")) return;
+      saveLightsourceItemEdit(event.target);
+    });
+
+    lightsourceListEl.addEventListener("keydown", event => {
+      if (!event.target.matches("[data-edit-lightsource-item]") || event.key !== "Enter") return;
+      event.preventDefault();
+      saveLightsourceItemEdit(event.target);
+      event.target.blur();
+    });
+
+    lightsourceListEl.addEventListener("click", event => {
+      const button = event.target.closest("[data-remove-lightsource-item]");
+      if (!button) return;
+      const requestIndex = Number(button.dataset.requestIndex);
+      const itemIndex = Number(button.dataset.itemIndex);
+      const request = lightsourceRequests[requestIndex];
+      const item = request?.items?.[itemIndex];
+      if (!request || !item) return;
+      if (!confirm(`Remove ${item.sku} from ${request.order_number}?`)) return;
+      request.items.splice(itemIndex, 1);
+      if (!request.items.length) {
+        lightsourceRequests.splice(requestIndex, 1);
+      }
+      lightsourceResultSection.classList.add("hidden");
+      lightsourceStatusEl.textContent = `Removed ${item.sku} from ${request.order_number}.`;
+      renderLightsourceList();
+    });
+
+    document.querySelector("#lightsourceExport").addEventListener("click", async () => {
+      if (!lightsourceRequests.length) {
+        lightsourceStatusEl.textContent = "Add at least one Lightsource email first.";
+        return;
+      }
+      lightsourceStatusEl.textContent = "Generating Lightsource SB import...";
+      document.querySelector("#lightsourceExport").disabled = true;
+      try {
+        const response = await fetch("/api/lightsource/export", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requests: lightsourceRequests }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          lightsourceStatusEl.textContent = data.error || "Could not generate Lightsource import.";
+          return;
+        }
+        lightsourceStatusEl.textContent = "Lightsource SB import CSV is ready.";
+        renderLightsourceResult(data);
+      } catch (error) {
+        lightsourceStatusEl.textContent = "The server stopped responding while generating the Lightsource import.";
+      } finally {
+        document.querySelector("#lightsourceExport").disabled = false;
       }
     });
 
@@ -2233,6 +3563,82 @@ HTML = r"""
       return "change";
     }
 
+    function fieldLabel(field) {
+      if (field === "order_number") return "order number";
+      if (field === "sku") return "SKU";
+      if (field === "qty") return "qty";
+      if (field === "recipient") return "recipient";
+      if (field === "company") return "company";
+      if (field === "address_line_1") return "address line 1";
+      if (field === "address_line_2") return "address line 2";
+      if (field === "city") return "city";
+      if (field === "state") return "state";
+      if (field === "postal_code") return "postal code";
+      if (field === "country") return "country";
+      if (field === "email") return "email";
+      if (field === "phone") return "phone";
+      return "change";
+    }
+
+    function renderLightsourceList() {
+      if (!lightsourceRequests.length) {
+        lightsourceListEl.className = "subtle";
+        lightsourceListEl.textContent = "No Lightsource emails added yet.";
+        return;
+      }
+      const rows = [];
+      lightsourceRequests.forEach((request, requestIndex) => {
+        request.items.forEach((item, itemIndex) => {
+          rows.push({
+            "Order Number": `<input class="list-input order-input" data-edit-lightsource-item data-field="order_number" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.order_number || "")}" aria-label="Order number for ${escapeHtml(item.sku)}">`,
+            "Company": `<input class="list-input sku-input" data-edit-lightsource-item data-field="company" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.company || "")}" aria-label="Company for ${escapeHtml(request.order_number)}">`,
+            "Recipient": `<input class="list-input sku-input" data-edit-lightsource-item data-field="recipient" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.recipient || "")}" aria-label="Recipient for ${escapeHtml(request.order_number)}">`,
+            "Address 1": `<input class="list-input sku-input" data-edit-lightsource-item data-field="address_line_1" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.address_line_1 || "")}" aria-label="Address line 1 for ${escapeHtml(request.order_number)}">`,
+            "Address 2": `<input class="list-input sku-input" data-edit-lightsource-item data-field="address_line_2" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.address_line_2 || "")}" aria-label="Address line 2 for ${escapeHtml(request.order_number)}">`,
+            "City": `<input class="list-input sku-input" data-edit-lightsource-item data-field="city" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.city || "")}" aria-label="City for ${escapeHtml(request.order_number)}">`,
+            "State": `<input class="list-input qty-input" data-edit-lightsource-item data-field="state" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.state || "")}" aria-label="State for ${escapeHtml(request.order_number)}">`,
+            "Zip": `<input class="list-input sku-input" data-edit-lightsource-item data-field="postal_code" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.postal_code || "")}" aria-label="Postal code for ${escapeHtml(request.order_number)}">`,
+            "Email": `<input class="list-input sku-input" data-edit-lightsource-item data-field="email" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.email || "")}" aria-label="Email for ${escapeHtml(request.order_number)}">`,
+            "Phone": `<input class="list-input sku-input" data-edit-lightsource-item data-field="phone" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(request.phone || "")}" aria-label="Phone for ${escapeHtml(request.order_number)}">`,
+            "SKU": `<input class="list-input sku-input" data-edit-lightsource-item data-field="sku" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(item.sku || "")}" aria-label="SKU for ${escapeHtml(request.order_number)}">`,
+            "Qty": `<input class="list-input qty-input" data-edit-lightsource-item data-field="qty" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(item.qty || "1")}" inputmode="numeric" aria-label="Quantity for ${escapeHtml(item.sku)}">`,
+            "Remove": `<button class="danger" type="button" data-remove-lightsource-item data-request-index="${requestIndex}" data-item-index="${itemIndex}">Remove</button>`,
+          });
+        });
+      });
+      lightsourceListEl.className = "preview";
+      lightsourceListEl.innerHTML = htmlTable(rows);
+    }
+
+    function saveLightsourceItemEdit(input) {
+      const requestIndex = Number(input.dataset.requestIndex);
+      const itemIndex = Number(input.dataset.itemIndex);
+      const field = input.dataset.field;
+      const request = lightsourceRequests[requestIndex];
+      const item = request?.items?.[itemIndex];
+      if (!request || !item) return;
+      let value = input.value.trim();
+      if (field === "order_number") {
+        request.order_number = value;
+      } else if (["company", "address_line_1", "address_line_2", "city", "state", "postal_code", "country", "email", "phone"].includes(field)) {
+        request[field] = value;
+      } else if (field === "recipient") {
+        request.recipient = value;
+        const parts = value.split(/\s+/).filter(Boolean);
+        request.first_name = parts.length ? parts.slice(0, -1).join(" ") || parts[0] : "";
+        request.last_name = parts.length > 1 ? parts[parts.length - 1] : "";
+      } else if (field === "sku") {
+        value = value || item.sku;
+        item.sku = value;
+      } else if (field === "qty") {
+        value = value || "1";
+        item.qty = value;
+      }
+      input.value = value;
+      lightsourceResultSection.classList.add("hidden");
+      lightsourceStatusEl.textContent = `Saved ${fieldLabel(field)} for ${item.sku}.`;
+    }
+
     function renderHavnResult(data) {
       const preview = data.preview || [];
       const uploadPreview = data.upload_preview || [];
@@ -2267,6 +3673,93 @@ HTML = r"""
       havnResultSection.classList.remove("hidden");
     }
 
+    function renderBulkInboundResult(data) {
+      const preview = data.preview || [];
+      const reportPreview = data.report_preview || [];
+      const sources = data.sources || [];
+      bulkInboundResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.row_count} bulk inbound upload row${data.row_count === 1 ? "" : "s"} created.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}">Download Bulk Inbound CSV</a>
+            <a class="download" href="${data.report_url}">Download Review Report</a>
+          </div>
+        </div>
+        ${data.review_count ? `
+          <div class="notice" style="margin-top: 12px;">
+            <strong>${data.review_count} row${data.review_count === 1 ? "" : "s"} need review.</strong>
+            The upload CSV keeps the required template columns, and the review report shows what was inferred or missing.
+          </div>
+        ` : ""}
+        ${sources.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>Detected Fields</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(sources.map(source => ({
+                "Source File": source.filename,
+                "Rows Found": source.row_count,
+                "Detected": Object.keys(source.detected || {}).join(", "),
+              })))}
+            </div>
+          </details>
+        ` : ""}
+        ${reportPreview.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>Review Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(reportPreview)}
+            </div>
+          </details>
+        ` : ""}
+        ${preview.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>Bulk Inbound CSV Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+      `;
+      bulkInboundResultSection.classList.remove("hidden");
+    }
+
+    function renderProductVariantsResult(data) {
+      const preview = data.preview || [];
+      const reportPreview = data.report_preview || [];
+      productVariantsResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.row_count} product variant row${data.row_count === 1 ? "" : "s"} created.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}">Download Product Variants CSV</a>
+            <a class="download" href="${data.report_url}">Download Review Report</a>
+          </div>
+        </div>
+        ${data.review_count ? `
+          <div class="notice" style="margin-top: 12px;">
+            <strong>${data.review_count} row${data.review_count === 1 ? "" : "s"} need review.</strong>
+            Check the report for missing required product setup fields.
+          </div>
+        ` : ""}
+        ${reportPreview.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>Review Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(reportPreview)}
+            </div>
+          </details>
+        ` : ""}
+        ${preview.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>Product Variants CSV Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+      `;
+      productVariantsResultSection.classList.remove("hidden");
+    }
+
     function renderOutboundResult(data) {
       const reportPreview = data.report_preview || [];
       const preview = data.preview || [];
@@ -2295,6 +3788,36 @@ HTML = r"""
         ` : ""}
       `;
       outboundResultSection.classList.remove("hidden");
+    }
+
+    function renderLightsourceResult(data) {
+      const reportPreview = data.report_preview || [];
+      const preview = data.preview || [];
+      lightsourceResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.row_count} Lightsource item rows created.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}">Download SB Import CSV</a>
+          </div>
+        </div>
+        ${reportPreview.length ? `
+          <details style="margin-top: 14px;">
+            <summary><strong>Lightsource Report Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(reportPreview)}
+            </div>
+          </details>
+        ` : ""}
+        ${preview.length ? `
+          <details open style="margin-top: 14px;">
+            <summary><strong>SB Import Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+      `;
+      lightsourceResultSection.classList.remove("hidden");
     }
 
     function simpleTable(rows) {
