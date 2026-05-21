@@ -2721,15 +2721,27 @@ HTML = r"""
     }
     .tab {
       min-width: 112px;
-      background: #fff;
-      border-color: var(--line);
+      background: var(--brand-soft);
+      border-color: #d7e3f6;
       color: var(--text);
+    }
+    .tab:hover, .tab:focus-visible {
+      background: var(--brand-soft-hover);
+      border-color: var(--focus);
+      color: var(--text);
+      box-shadow: 0 7px 16px rgba(16, 35, 63, 0.08);
     }
     .tab.active {
       background: var(--brand);
       border-color: var(--brand);
       color: #fff;
       box-shadow: 0 7px 16px rgba(5, 5, 5, 0.14);
+    }
+    .tab.active:hover, .tab.active:focus-visible {
+      background: var(--brand-hover);
+      border-color: var(--brand-hover);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(5, 5, 5, 0.12);
     }
     .files {
       display: grid;
