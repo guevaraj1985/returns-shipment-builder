@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "0.1.3"
+APP_VERSION = "0.1.4"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -1475,20 +1475,44 @@ def parse_havn_email(text: str) -> dict[str, Any]:
     if block_match:
         sku_block = block_match.group(1)
 
-    sku_candidates = re.findall(r"\b[A-Z0-9][A-Z0-9-]{2,}\b", sku_block)
     ignored = {"ORDER", "ITEM", "ITEMS", "RETURN", "THANKS", "HAVN", "TEAM"}
-    skus = [sku for sku in sku_candidates if sku.upper() not in ignored and not sku.isdigit()]
 
-    if not skus:
-        skus = re.findall(r"\b[A-Z]{2,}[A-Z0-9-]{3,}\b", normalized_text)
-        skus = [sku for sku in skus if sku.upper() not in ignored and not sku.isdigit()]
+    def parse_item_lines(value: str) -> list[dict[str, str]]:
+        parsed: list[dict[str, str]] = []
+        for raw_line in value.splitlines():
+            line = cell_text(raw_line)
+            if not line:
+                continue
+            match = re.search(
+                r"\b(?P<sku>[A-Z0-9][A-Z0-9-]{2,})\b(?:\s*(?:x|X|\*|qty\.?|quantity)\s*(?P<qty>\d+))?",
+                line,
+                re.IGNORECASE,
+            )
+            if not match:
+                continue
+            sku = match.group("sku").upper()
+            if sku in ignored or sku.isdigit():
+                continue
+            parsed.append({"sku": sku, "qty": choose_quantity("", match.group("qty") or "1")})
+        return parsed
 
-    deduped: list[str] = []
-    for sku in skus:
-        if sku not in deduped:
-            deduped.append(sku)
+    items = parse_item_lines(sku_block)
 
-    return {"order_number": order, "skus": deduped, "raw": text}
+    if not items:
+        for sku in re.findall(r"\b[A-Z]{2,}[A-Z0-9-]{3,}\b", normalized_text):
+            sku = sku.upper()
+            if sku not in ignored and not sku.isdigit():
+                items.append({"sku": sku, "qty": "1"})
+
+    deduped: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in items:
+        key = (item["sku"], item["qty"])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(item)
+
+    return {"order_number": order, "skus": [item["sku"] for item in deduped], "items": deduped, "raw": text}
 
 
 def havn_request_rows(requests: list[dict[str, Any]]) -> list[dict[str, str]]:
@@ -2608,6 +2632,20 @@ HTML = r"""
     .tool-panel h2 {
       margin-bottom: 2px;
     }
+    .manual-entry {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) 90px auto;
+      gap: 10px;
+      align-items: end;
+      margin: 14px 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #f8fbff;
+    }
+    .manual-entry label {
+      margin: 0;
+    }
     .tool-panel input[type=file] {
       padding: 12px;
     }
@@ -2881,6 +2919,7 @@ HTML = r"""
       header { padding-inline: 18px; }
       .mapping { grid-template-columns: 1fr; }
       .compact-grid, .result-grid { grid-template-columns: 1fr; }
+      .manual-entry { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -2942,6 +2981,18 @@ HTML = r"""
 
       <section>
         <h2>Havn Return List</h2>
+        <div class="manual-entry">
+          <label>Order #
+            <input id="havnManualOrder" class="list-input" type="text" placeholder="0617022189174727">
+          </label>
+          <label>SKU
+            <input id="havnManualSku" class="list-input" type="text" placeholder="FD-ULGHTBNE-BLK-1">
+          </label>
+          <label>Qty
+            <input id="havnManualQty" class="list-input qty-input" type="text" inputmode="numeric" value="1">
+          </label>
+          <button id="havnManualAdd" type="button">Add Row</button>
+        </div>
         <div id="havnList" class="subtle">No Havn emails added yet.</div>
         <div class="row">
           <button id="havnExport">Generate Havn Files</button>
@@ -3203,31 +3254,20 @@ HTML = r"""
           havnStatusEl.textContent = data.error || "Could not parse that email.";
           return;
         }
-        const incomingPairs = data.skus.map(sku => `${data.order_number.trim().toUpperCase()}|${sku.trim().toUpperCase()}`);
-        const existingPairs = new Set();
-        havnRequests.forEach(request => {
-          request.items.forEach(item => {
-            existingPairs.add(`${request.order_number.trim().toUpperCase()}|${item.sku.trim().toUpperCase()}`);
-          });
-        });
-        const duplicatePairs = incomingPairs.filter(pair => existingPairs.has(pair));
-        if (duplicatePairs.length === incomingPairs.length) {
-          havnStatusEl.textContent = `Already added: ${data.order_number} with the same SKU${data.skus.length === 1 ? "" : "s"}.`;
-          return;
-        }
-        const newSkus = data.skus.filter((sku, index) => !existingPairs.has(incomingPairs[index]));
-        if (duplicatePairs.length) {
-          havnStatusEl.textContent = `Skipped ${duplicatePairs.length} duplicate SKU${duplicatePairs.length === 1 ? "" : "s"} for ${data.order_number}.`;
-        }
-        havnRequests.push({
-          order_number: data.order_number,
-          items: newSkus.map(sku => ({ sku, qty: "1" })),
-        });
+        const incomingItems = (data.items || data.skus.map(sku => ({ sku, qty: "1" }))).map(item => ({
+          sku: String(item.sku || "").trim().toUpperCase(),
+          qty: String(item.qty || "1").trim() || "1",
+        })).filter(item => item.sku);
+        const result = addHavnItems(data.order_number, incomingItems);
         document.querySelector("#havnEmail").value = "";
-        if (!duplicatePairs.length) {
-          havnStatusEl.textContent = `Added ${data.order_number} with ${newSkus.length} SKU${newSkus.length === 1 ? "" : "s"}.`;
-        }
         renderHavnList();
+        if (!result.added) {
+          havnStatusEl.textContent = `Already added: ${data.order_number} with the same SKU and qty.`;
+        } else if (result.duplicates) {
+          havnStatusEl.textContent = `Added ${result.added} row${result.added === 1 ? "" : "s"} and skipped ${result.duplicates} duplicate row${result.duplicates === 1 ? "" : "s"}.`;
+        } else {
+          havnStatusEl.textContent = `Added ${data.order_number} with ${result.added} row${result.added === 1 ? "" : "s"}.`;
+        }
       } catch (error) {
         havnStatusEl.textContent = "The server stopped responding while parsing the email.";
       } finally {
@@ -3271,6 +3311,27 @@ HTML = r"""
       havnResultSection.classList.add("hidden");
       havnStatusEl.textContent = `Removed ${item.sku} from ${orderNumber}.`;
       renderHavnList();
+    });
+
+    document.querySelector("#havnManualAdd").addEventListener("click", () => {
+      const order = document.querySelector("#havnManualOrder").value.trim();
+      const sku = document.querySelector("#havnManualSku").value.trim().toUpperCase();
+      const qty = document.querySelector("#havnManualQty").value.trim() || "1";
+      havnResultSection.classList.add("hidden");
+      if (!order || !sku || !qty) {
+        havnStatusEl.textContent = "Manual rows need an order number, SKU, and qty.";
+        return;
+      }
+      const result = addHavnItems(order, [{ sku, qty }]);
+      renderHavnList();
+      if (!result.added) {
+        havnStatusEl.textContent = `Already added: ${cleanHavnOrderNumber(order)} with ${sku} qty ${qty}.`;
+        return;
+      }
+      document.querySelector("#havnManualOrder").value = "";
+      document.querySelector("#havnManualSku").value = "";
+      document.querySelector("#havnManualQty").value = "1";
+      havnStatusEl.textContent = `Added manual row for ${cleanHavnOrderNumber(order)} / ${sku} / qty ${qty}.`;
     });
 
     document.querySelector("#havnExport").addEventListener("click", async () => {
@@ -3518,6 +3579,40 @@ HTML = r"""
       });
     }
 
+    function havnItemKey(order, sku, qty) {
+      return `${cleanHavnOrderNumber(order).toUpperCase()}|${String(sku || "").trim().toUpperCase()}|${String(qty || "1").trim() || "1"}`;
+    }
+
+    function addHavnItems(order, items) {
+      const cleanOrder = cleanHavnOrderNumber(order);
+      const existing = new Set();
+      havnRequests.forEach(request => {
+        request.items.forEach(item => existing.add(havnItemKey(request.order_number, item.sku, item.qty)));
+      });
+      let request = havnRequests.find(candidate => candidate.order_number.trim().toUpperCase() === cleanOrder.toUpperCase());
+      let added = 0;
+      let duplicates = 0;
+      items.forEach(item => {
+        const sku = String(item.sku || "").trim().toUpperCase();
+        const qty = String(item.qty || "1").trim() || "1";
+        if (!cleanOrder || !sku || !qty) return;
+        const key = havnItemKey(cleanOrder, sku, qty);
+        if (existing.has(key)) {
+          duplicates += 1;
+          return;
+        }
+        if (!request) {
+          request = { order_number: cleanOrder, items: [] };
+          havnRequests.push(request);
+        }
+        request.items.push({ sku, qty });
+        existing.add(key);
+        added += 1;
+      });
+      havnResultSection.classList.add("hidden");
+      return { added, duplicates };
+    }
+
     function renderHavnList() {
       if (!havnRequests.length) {
         havnListEl.className = "subtle";
@@ -3566,13 +3661,6 @@ HTML = r"""
 
     function cleanHavnOrderNumber(value) {
       return value.replace(/\s+RET$/i, "").trim();
-    }
-
-    function fieldLabel(field) {
-      if (field === "order_number") return "order number";
-      if (field === "sku") return "SKU";
-      if (field === "qty") return "qty";
-      return "change";
     }
 
     function fieldLabel(field) {
