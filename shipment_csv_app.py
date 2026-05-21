@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "0.1.6"
+APP_VERSION = "0.1.7"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -2805,8 +2805,8 @@ HTML = r"""
     }
     .theme-choice {
       min-height: 34px;
-      padding: 0 9px;
-      gap: 6px;
+      width: 36px;
+      padding: 0;
       background: var(--brand-soft);
       border-color: #d7e3f6;
       color: var(--text);
@@ -2831,8 +2831,8 @@ HTML = r"""
       color: #fff;
     }
     .theme-swatch {
-      width: 10px;
-      height: 10px;
+      width: 14px;
+      height: 14px;
       flex: 0 0 auto;
       border-radius: 999px;
       background: var(--swatch);
@@ -3010,13 +3010,13 @@ HTML = r"""
       <button class="tab" id="outboundTab">Outbound Replacement</button>
       <div class="theme-dock" aria-label="Button color theme">
         <span class="theme-dock-label">Buttons</span>
-        <button class="theme-choice active" type="button" data-theme-choice="default" title="Default black buttons"><span class="theme-swatch" style="--swatch:#050505"></span>Default</button>
-        <button class="theme-choice" type="button" data-theme-choice="dodger" title="Dodger blue mode"><span class="theme-swatch" style="--swatch:#1e90ff"></span>Dodger</button>
-        <button class="theme-choice" type="button" data-theme-choice="eagles" title="Midnight green mode"><span class="theme-swatch" style="--swatch:#004c54"></span>Eagles</button>
-        <button class="theme-choice" type="button" data-theme-choice="sunset" title="Sunset orange mode"><span class="theme-swatch" style="--swatch:#f97316"></span>Sunset</button>
-        <button class="theme-choice" type="button" data-theme-choice="grape" title="Grape purple mode"><span class="theme-swatch" style="--swatch:#7c3aed"></span>Grape</button>
-        <button class="theme-choice" type="button" data-theme-choice="mint" title="Mint green mode"><span class="theme-swatch" style="--swatch:#0f9f6e"></span>Mint</button>
-        <button class="theme-choice" type="button" id="randomTheme" title="Pick a random button color"><span class="theme-swatch" style="--swatch:linear-gradient(135deg,#1e90ff,#f97316,#0f9f6e)"></span>Random</button>
+        <button class="theme-choice active" type="button" data-theme-choice="default" title="Default black buttons" aria-label="Default black buttons"><span class="theme-swatch" style="--swatch:#050505"></span></button>
+        <button class="theme-choice" type="button" data-theme-choice="dodger" title="Dodger blue mode" aria-label="Dodger blue mode"><span class="theme-swatch" style="--swatch:#1e90ff"></span></button>
+        <button class="theme-choice" type="button" data-theme-choice="eagles" title="Eagles midnight green mode" aria-label="Eagles midnight green mode"><span class="theme-swatch" style="--swatch:#004c54"></span></button>
+        <button class="theme-choice" type="button" data-theme-choice="sunset" title="Sunset orange mode" aria-label="Sunset orange mode"><span class="theme-swatch" style="--swatch:#f97316"></span></button>
+        <button class="theme-choice" type="button" data-theme-choice="grape" title="Grape purple mode" aria-label="Grape purple mode"><span class="theme-swatch" style="--swatch:#7c3aed"></span></button>
+        <button class="theme-choice" type="button" data-theme-choice="mint" title="Mint green mode" aria-label="Mint green mode"><span class="theme-swatch" style="--swatch:#0f9f6e"></span></button>
+        <button class="theme-choice" type="button" id="randomTheme" title="Random color mode" aria-label="Random color mode"><span class="theme-swatch" style="--swatch:linear-gradient(135deg,#1e90ff,#f97316,#0f9f6e)"></span></button>
       </div>
     </div>
 
