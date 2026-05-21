@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "0.1.4"
+APP_VERSION = "0.1.5"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -1483,17 +1483,21 @@ def parse_havn_email(text: str) -> dict[str, Any]:
             line = cell_text(raw_line)
             if not line:
                 continue
-            match = re.search(
-                r"\b(?P<sku>[A-Z0-9][A-Z0-9-]{2,})\b(?:\s*(?:x|X|\*|qty\.?|quantity)\s*(?P<qty>\d+))?",
-                line,
-                re.IGNORECASE,
-            )
+            match = re.search(r"\b(?P<sku>[A-Z0-9][A-Z0-9-]{2,})\b", line, re.IGNORECASE)
             if not match:
                 continue
             sku = match.group("sku").upper()
             if sku in ignored or sku.isdigit():
                 continue
-            parsed.append({"sku": sku, "qty": choose_quantity("", match.group("qty") or "1")})
+            qty_text = "1"
+            tail = line[match.end():]
+            qty_match = (
+                re.search(r"(?:^|[\s:-])(?:x|\*|qty\.?|quantity)\s*(\d+)\b", tail, re.IGNORECASE)
+                or re.search(r"(?:^|[\s:-])(\d+)\s*(?:x|qty\.?|quantity)\b", tail, re.IGNORECASE)
+            )
+            if qty_match:
+                qty_text = qty_match.group(1)
+            parsed.append({"sku": sku, "qty": choose_quantity("", qty_text)})
         return parsed
 
     items = parse_item_lines(sku_block)
@@ -2539,8 +2543,8 @@ HTML = r"""
       --text: #10233f;
       --muted: #5f6f86;
       --line: #d9e3f0;
-      --brand: #050505;
-      --brand-hover: #242424;
+      --brand: #1e90ff;
+      --brand-hover: #0f74d1;
       --brand-soft: #edf3ff;
       --brand-soft-hover: #dce8ff;
       --accent: #ffa970;
