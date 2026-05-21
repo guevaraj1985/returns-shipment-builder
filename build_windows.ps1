@@ -24,6 +24,7 @@ Remove-Item -Force ".\$AppName.spec" -ErrorAction SilentlyContinue
     --clean `
     --collect-all pandas `
     --collect-all openpyxl `
+    --collect-all pypdf `
     --add-data "README_PACKAGED_APP.md;." `
     ".\shipment_csv_app.py"
 
