@@ -1764,8 +1764,10 @@ def parse_lightsource_email(text: str) -> dict[str, Any]:
         order_match = re.search(r"^Print\s+Order\s+#\s*([A-Za-z0-9-]+)\s*$", normalized_text, re.IGNORECASE | re.MULTILINE)
         order = order_match.group(1).strip() if order_match else ""
     order = order or extract_lightsource_field(normalized_text, "Order Number")
-    brand = extract_lightsource_field(normalized_text, "Brand") or "Acorn"
-    company_name = re.sub(r"\s+Biolabs\b", "", brand, flags=re.IGNORECASE).strip() or brand
+    brand = extract_lightsource_field(normalized_text, "Brand")
+    company_name = extract_lightsource_field(normalized_text, "Company")
+    if not company_name:
+        company_name = re.sub(r"\s+Biolabs\b", "", brand, flags=re.IGNORECASE).strip() or brand or "Acorn"
     recipient = extract_lightsource_field(normalized_text, "Recipient")
     address = extract_lightsource_field(normalized_text, "Address")
     city = extract_lightsource_field(normalized_text, "City")
@@ -1832,6 +1834,7 @@ def lightsource_order_rows(requests: list[dict[str, Any]]) -> list[dict[str, str
     for request_item in requests:
         order = cell_text(request_item.get("order_number", ""))
         company = cell_text(request_item.get("company", "")) or cell_text(request_item.get("brand", "")) or "Acorn"
+        notes = cell_text(request_item.get("brand", ""))
         recipient = cell_text(request_item.get("recipient", ""))
         first_name = cell_text(request_item.get("first_name", ""))
         last_name = cell_text(request_item.get("last_name", ""))
@@ -1859,7 +1862,7 @@ def lightsource_order_rows(requests: list[dict[str, Any]]) -> list[dict[str, str
                     "Country": cell_text(request_item.get("country", "")) or "US",
                     "Email": cell_text(request_item.get("email", "")),
                     "Phone": digits_only(cell_text(request_item.get("phone", ""))),
-                    "Notes": "",
+                    "Notes": notes,
                     "Signature Required": "",
                     "Package SKU": "",
                     "Package Type": "",
@@ -2687,6 +2690,7 @@ HTML = r"""
       margin: 22px auto 64px;
       display: grid;
       gap: 18px;
+      min-width: 0;
     }
     section {
       background: var(--panel);
@@ -2694,6 +2698,7 @@ HTML = r"""
       border-radius: var(--radius-md);
       padding: 20px;
       box-shadow: var(--shadow);
+      min-width: 0;
     }
     .compact-grid {
       display: grid;
@@ -2954,11 +2959,58 @@ HTML = r"""
       transition: border-color .16s ease, box-shadow .16s ease;
     }
     .preview {
+      display: block;
+      width: 100%;
+      max-width: 100%;
       overflow: auto;
       border: 1px solid var(--line);
       border-radius: var(--radius-md);
       max-height: 360px;
       box-shadow: 0 6px 18px rgba(16, 35, 63, 0.04);
+    }
+    .table-wrap {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      overflow: auto;
+      max-height: 300px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      box-shadow: 0 6px 18px rgba(16, 35, 63, 0.04);
+      contain: layout paint;
+    }
+    .table-wrap table {
+      width: max-content;
+      min-width: 100%;
+      max-width: none;
+      border-collapse: collapse;
+      border-spacing: 0;
+      border: 0;
+    }
+    .table-wrap th,
+    .table-wrap td {
+      max-width: 190px;
+      padding: 7px 8px;
+    }
+    .table-wrap th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    details.preview-panel {
+      margin-top: 14px;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    details.preview-panel summary {
+      cursor: pointer;
+      user-select: none;
+    }
+    details.preview-panel .table-wrap,
+    details.preview-panel .preview {
+      margin-top: 8px;
     }
     table {
       width: 100%;
@@ -4059,17 +4111,17 @@ HTML = r"""
           </div>
         </div>
         ${reportPreview.length ? `
-          <details style="margin-top: 14px;">
+          <details class="preview-panel">
             <summary><strong>Outbound Report Preview</strong></summary>
-            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+            <div class="table-wrap">
               ${simpleTable(reportPreview)}
             </div>
           </details>
         ` : ""}
         ${preview.length ? `
-          <details open style="margin-top: 14px;">
+          <details class="preview-panel" open>
             <summary><strong>Soapbox CSV Preview</strong></summary>
-            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+            <div class="table-wrap">
               ${simpleTable(preview)}
             </div>
           </details>
