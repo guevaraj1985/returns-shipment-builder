@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.4"
+APP_VERSION = "1.5"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
