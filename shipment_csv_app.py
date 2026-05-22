@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.2"
+APP_VERSION = "1.3"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -327,6 +327,17 @@ SOAPBOX_ORDER_IMPORT_FIELDS = [
     "Origin Contact Name",
     "Origin Phone",
     "Origin Email",
+]
+
+OUTBOUND_ORDER_ALIASES = [
+    "Shopify Order#",
+    "Shopify Order #",
+    "Shopify Order",
+    "Shopify Order Number",
+    "Order Number",
+    "Order #",
+    "Customer Order Number",
+    "Reference Order Number",
 ]
 
 HAVN_DESTINATION_FIELDS = {
@@ -1891,11 +1902,45 @@ def read_csv_dicts(file_id: str) -> list[dict[str, str]]:
         return [{key: cell_text(value) for key, value in row.items()} for row in csv.DictReader(handle)]
 
 
+def outbound_order_number(source: dict[str, str]) -> str:
+    by_norm = {normalized(key): key for key in source.keys() if "external" not in normalized(key)}
+    order = ""
+    for candidate in OUTBOUND_ORDER_ALIASES:
+        key = by_norm.get(normalized(candidate))
+        if key:
+            order = value_from(source, key)
+            break
+    if not order:
+        for key in source.keys():
+            key_norm = normalized(key)
+            if "external" in key_norm:
+                continue
+            for candidate in OUTBOUND_ORDER_ALIASES:
+                candidate_norm = normalized(candidate)
+                if len(candidate_norm) > 5 and candidate_norm in key_norm:
+                    order = value_from(source, key)
+                    break
+            if order:
+                break
+    if order:
+        return normalize_order_number(order)
+
+    external_order = row_value(source, ["External Order ID", "External Order", "External ID"])
+    for key, value in source.items():
+        text = cell_text(value)
+        digits = digits_only(text)
+        if not digits or text == external_order:
+            continue
+        if re.fullmatch(r"0?617022\d{9,}", digits):
+            return normalize_order_number(digits)
+    return ""
+
+
 def outbound_order_rows(file_id: str) -> list[dict[str, str]]:
     source_rows = read_csv_dicts(file_id)
     output: list[dict[str, str]] = []
     for source in source_rows:
-        order = row_value(source, ["Shopify Order#", "Order Number", "Order #"])
+        order = outbound_order_number(source)
         full_name = title_case_name(row_value(source, ["Full Name", "Name", "Customer"]))
         skus = split_skus(row_value(source, ["SKUs", "SKU", "Item SKU"]))
         if not skus:
