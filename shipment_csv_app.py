@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.3"
+APP_VERSION = "1.4"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -334,10 +334,33 @@ OUTBOUND_ORDER_ALIASES = [
     "Shopify Order #",
     "Shopify Order",
     "Shopify Order Number",
+    "Shipment # *",
+    "Shipment #",
+    "Shipment Number",
+    "Shipment",
     "Order Number",
     "Order #",
     "Customer Order Number",
     "Reference Order Number",
+]
+
+OUTBOUND_SKU_ALIASES = [
+    "SKUs",
+    "SKU",
+    "Item SKU",
+    "Product Variant SKU *",
+    "Product Variant SKU",
+    "Variant SKU",
+]
+
+OUTBOUND_QTY_ALIASES = [
+    "Qty",
+    "Quantity",
+    "Item Quantity",
+    "Units per Case *",
+    "Units per Case",
+    "Cases *",
+    "Cases",
 ]
 
 HAVN_DESTINATION_FIELDS = {
@@ -1942,11 +1965,16 @@ def outbound_order_rows(file_id: str) -> list[dict[str, str]]:
     for source in source_rows:
         order = outbound_order_number(source)
         full_name = title_case_name(row_value(source, ["Full Name", "Name", "Customer"]))
-        skus = split_skus(row_value(source, ["SKUs", "SKU", "Item SKU"]))
+        skus = split_skus(row_value(source, OUTBOUND_SKU_ALIASES))
         if not skus:
             skus = [""]
         for sku in skus:
-            qty = choose_quantity("", row_value(source, ["Qty", "Quantity", "Item Quantity"]) or "1")
+            cases = choose_quantity("", row_value(source, ["Cases *", "Cases"]) or "1")
+            units = choose_quantity("", row_value(source, ["Units per Case *", "Units per Case"]))
+            if units:
+                qty = str(max(1, int(cases or "1") * int(units)))
+            else:
+                qty = choose_quantity("", row_value(source, OUTBOUND_QTY_ALIASES) or "1")
             package = package_for_sku(sku, qty)
             output.append(
                 {
