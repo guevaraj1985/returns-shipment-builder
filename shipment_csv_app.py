@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.6"
+APP_VERSION = "1.7"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -2051,26 +2051,24 @@ def lightsource_fedex_rows(requests: list[dict[str, Any]]) -> list[list[str]]:
         order = cell_text(request_item.get("order_number", ""))
         company = cell_text(request_item.get("company", "")) or cell_text(request_item.get("brand", "")) or "Acorn"
         recipient = cell_text(request_item.get("recipient", ""))
-        items = request_item.get("items", []) or [{}]
-        for _item in items:
-            row = LIGHTSOURCE_FEDEX_DEFAULT_ROW.copy()
-            row[0] = order
-            row[12] = company
-            row[13] = recipient
-            row[14] = cell_text(request_item.get("address_line_1", ""))
-            row[15] = cell_text(request_item.get("address_line_2", ""))
-            row[16] = cell_text(request_item.get("city", ""))
-            row[17] = cell_text(request_item.get("state", ""))
-            row[18] = cell_text(request_item.get("postal_code", ""))
-            row[19] = cell_text(request_item.get("country", "")) or "US"
-            row[20] = cell_text(request_item.get("email", ""))
-            row[21] = digits_only(cell_text(request_item.get("phone", "")))
-            row[22] = "1"
-            row[23] = ""
-            row[25] = ""
-            row[26] = ""
-            row[27] = ""
-            rows.append(row)
+        row = LIGHTSOURCE_FEDEX_DEFAULT_ROW.copy()
+        row[0] = order
+        row[12] = company
+        row[13] = recipient
+        row[14] = cell_text(request_item.get("address_line_1", ""))
+        row[15] = cell_text(request_item.get("address_line_2", ""))
+        row[16] = cell_text(request_item.get("city", ""))
+        row[17] = cell_text(request_item.get("state", ""))
+        row[18] = cell_text(request_item.get("postal_code", ""))
+        row[19] = cell_text(request_item.get("country", "")) or "US"
+        row[20] = cell_text(request_item.get("email", ""))
+        row[21] = digits_only(cell_text(request_item.get("phone", "")))
+        row[22] = "1"
+        row[23] = ""
+        row[25] = ""
+        row[26] = ""
+        row[27] = ""
+        rows.append(row)
     return rows
 
 
@@ -2083,23 +2081,21 @@ def lightsource_ups_rows(requests: list[dict[str, Any]]) -> list[list[str]]:
         recipient = cell_text(request_item.get("recipient", ""))
         contact_name = recipient if company and recipient else ""
         company_or_name = company or recipient or brand or "Lightsource"
-        items = request_item.get("items", []) or [{}]
-        for _item in items:
-            row = LIGHTSOURCE_UPS_DEFAULT_ROW.copy()
-            row[0] = contact_name
-            row[1] = company_or_name
-            row[2] = cell_text(request_item.get("country", "")) or "US"
-            row[3] = cell_text(request_item.get("address_line_1", ""))
-            row[4] = cell_text(request_item.get("address_line_2", ""))
-            row[6] = cell_text(request_item.get("city", ""))
-            row[7] = cell_text(request_item.get("state", ""))
-            row[8] = cell_text(request_item.get("postal_code", ""))
-            row[9] = digits_only(cell_text(request_item.get("phone", "")))
-            row[12] = cell_text(request_item.get("email", ""))
-            row[13] = "2"
-            row[24] = "03"
-            row[32] = order
-            rows.append(row)
+        row = LIGHTSOURCE_UPS_DEFAULT_ROW.copy()
+        row[0] = contact_name
+        row[1] = company_or_name
+        row[2] = cell_text(request_item.get("country", "")) or "US"
+        row[3] = cell_text(request_item.get("address_line_1", ""))
+        row[4] = cell_text(request_item.get("address_line_2", ""))
+        row[6] = cell_text(request_item.get("city", ""))
+        row[7] = cell_text(request_item.get("state", ""))
+        row[8] = cell_text(request_item.get("postal_code", ""))
+        row[9] = digits_only(cell_text(request_item.get("phone", "")))
+        row[12] = cell_text(request_item.get("email", ""))
+        row[13] = "2"
+        row[24] = "03"
+        row[32] = order
+        rows.append(row)
     return rows
 
 
