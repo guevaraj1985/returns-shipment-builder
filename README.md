@@ -8,6 +8,7 @@ Local browser app for building returns-related CSV imports.
 - Havn inbound shipment builder from pasted return-label request emails.
 - Bulk inbound builder from customer pack lists, BOLs, POs, CSV/Excel files, and searchable PDFs.
 - Outbound replacement order starter from `shopify_orders_shipping_skus.csv`.
+- Lightsource pasted-email builder for Soapbox imports, with optional FedEx or UPS carrier import CSVs.
 
 ## Run Locally
 

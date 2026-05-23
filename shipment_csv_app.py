@@ -30,7 +30,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.5"
+APP_VERSION = "1.6"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 OUTPUT_FIELDS = [
@@ -454,6 +454,167 @@ LIGHTSOURCE_SB_IMPORT_FIELDS = [
     "Declared Value",
     "Package #",
 ]
+
+LIGHTSOURCE_FEDEX_IMPORT_FIELDS = [
+    "reference",
+    "serviceType",
+    "shipmentType",
+    "senderContactName",
+    "senderCompany",
+    "senderContactNumber",
+    "senderLine1",
+    "senderLine2",
+    "senderPostcode",
+    "senderCity",
+    "senderState",
+    "senderCountry",
+    "recipientCompany",
+    "recipientContactName",
+    "recipientLine1",
+    "recipientLine2",
+    "recipientCity",
+    "recipientState",
+    "recipientPostcode",
+    "recipientCountry",
+    "recipientEmail",
+    "recipientContactNumber",
+    "numberOfPackages",
+    "packageWeight",
+    "weightUnits",
+    "length",
+    "width",
+    "height",
+    "packageType",
+    "currencyType",
+    "paymentType",
+    "payerAccountNumber",
+    "taxPayerAccount",
+    "taxPaymentType",
+]
+
+LIGHTSOURCE_FEDEX_DEFAULT_ROW = [
+    "",
+    "FEDEX_GROUND",
+    "OUTBOUND",
+    "Shipping Dept.",
+    "Exfluential",
+    "7145085990",
+    "185 TECHNOLOGY DR",
+    "STE 150",
+    "926182421",
+    "IRVINE",
+    "CA",
+    "US",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "US",
+    "",
+    "",
+    "1",
+    "",
+    "LBS",
+    "",
+    "",
+    "",
+    "YOUR_PACKAGING",
+    "USD",
+    "THIRD_PARTY",
+    "200790139",
+    "200790139",
+    "THIRD_PARTY",
+]
+
+LIGHTSOURCE_UPS_IMPORT_FIELDS = [
+    "Contact Name",
+    "Company or Name",
+    "Country",
+    "Address 1",
+    "Address 2",
+    "Address 3",
+    "City",
+    "State/Prov/Other",
+    "Postal Code",
+    "Telephone",
+    "Ext",
+    "Residential Ind",
+    "Consignee Email",
+    "Packaging Type",
+    "Customs Value",
+    "Weight",
+    "Length",
+    "Width",
+    "Height",
+    "Unit of Measure",
+    "Description of Goods",
+    "Documents of No Commercial Value",
+    "GNIFC",
+    "Pkg Decl Value",
+    "Service",
+    "Delivery Confirm",
+    "Shipper Release",
+    "Ret of Documents",
+    "Saturday Deliver",
+    "Carbon Neutral",
+    "Large Package",
+    "Addl handling",
+    "Reference 1",
+    "Reference 2",
+    "Reference 3",
+    "QV Notif 1-Addr",
+    "QV Notif 1-Ship",
+    "QV Notif 1-Excp",
+    "QV Notif 1-Delv",
+    "QV Notif 2-Addr",
+    "QV Notif 2-Ship",
+    "QV Notif 2-Excp",
+    "QV Notif 2-Delv",
+    "QV Notif 3-Addr",
+    "QV Notif 3-Ship",
+    "QV Notif 3-Excp",
+    "QV Notif 3-Delv",
+    "QV Notif 4-Addr",
+    "QV Notif 4-Ship",
+    "QV Notif 4-Excp",
+    "QV Notif 4-Delv",
+    "QV Notif 5-Addr",
+    "QV Notif 5-Ship",
+    "QV Notif 5-Excp",
+    "QV Notif 5-Delv",
+    "QV Notif Msg",
+    "QV Failure Addr",
+    "UPS Premium Care",
+    "ADL Location ID",
+    "ADL Media Type",
+    "ADL Language",
+    "ADL Notification Addr",
+    "ADL Failure Addr",
+    "ADL COD Value",
+    "ADL Deliver to Addressee",
+    "ADL Shipper Media Type",
+    "ADL Shipper Language",
+    "ADL Shipper Notification Addr",
+    "ADL Direct Delivery Only",
+    "Electronic Package Release Authentication",
+    "Lithium Ion Alone",
+    "Lithium Ion In Equipment",
+    "Lithium Ion With_Equipment",
+    "Lithium Metal Alone",
+    "Lithium Metal In Equipment",
+    "Lithium Metal With Equipment",
+    "Weekend Commercial Delivery",
+    "Dry Ice Weight",
+    "Merchandise Description",
+    "UPS Ground Saver Limited Quantity/Lithium Battery",
+]
+
+LIGHTSOURCE_UPS_DEFAULT_ROW = [""] * len(LIGHTSOURCE_UPS_IMPORT_FIELDS)
+LIGHTSOURCE_UPS_DEFAULT_ROW[13] = "2"
+LIGHTSOURCE_UPS_DEFAULT_ROW[24] = "03"
 
 ALIASES = {
     "order_number": [
@@ -1766,8 +1927,6 @@ def parse_lightsource_email(text: str) -> dict[str, Any]:
     order = order or extract_lightsource_field(normalized_text, "Order Number")
     brand = extract_lightsource_field(normalized_text, "Brand")
     company_name = extract_lightsource_field(normalized_text, "Company")
-    if not company_name:
-        company_name = re.sub(r"\s+Biolabs\b", "", brand, flags=re.IGNORECASE).strip() or brand or "Acorn"
     recipient = extract_lightsource_field(normalized_text, "Recipient")
     address = extract_lightsource_field(normalized_text, "Address")
     city = extract_lightsource_field(normalized_text, "City")
@@ -1882,6 +2041,83 @@ def write_lightsource_order_import(requests: list[dict[str, Any]]) -> Path:
     with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.DictWriter(handle, fieldnames=LIGHTSOURCE_SB_IMPORT_FIELDS)
         writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def lightsource_fedex_rows(requests: list[dict[str, Any]]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for request_item in requests:
+        order = cell_text(request_item.get("order_number", ""))
+        company = cell_text(request_item.get("company", "")) or cell_text(request_item.get("brand", "")) or "Acorn"
+        recipient = cell_text(request_item.get("recipient", ""))
+        items = request_item.get("items", []) or [{}]
+        for _item in items:
+            row = LIGHTSOURCE_FEDEX_DEFAULT_ROW.copy()
+            row[0] = order
+            row[12] = company
+            row[13] = recipient
+            row[14] = cell_text(request_item.get("address_line_1", ""))
+            row[15] = cell_text(request_item.get("address_line_2", ""))
+            row[16] = cell_text(request_item.get("city", ""))
+            row[17] = cell_text(request_item.get("state", ""))
+            row[18] = cell_text(request_item.get("postal_code", ""))
+            row[19] = cell_text(request_item.get("country", "")) or "US"
+            row[20] = cell_text(request_item.get("email", ""))
+            row[21] = digits_only(cell_text(request_item.get("phone", "")))
+            row[22] = "1"
+            row[23] = ""
+            row[25] = ""
+            row[26] = ""
+            row[27] = ""
+            rows.append(row)
+    return rows
+
+
+def lightsource_ups_rows(requests: list[dict[str, Any]]) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for request_item in requests:
+        order = cell_text(request_item.get("order_number", ""))
+        brand = cell_text(request_item.get("brand", ""))
+        company = cell_text(request_item.get("company", ""))
+        recipient = cell_text(request_item.get("recipient", ""))
+        contact_name = recipient if company and recipient else ""
+        company_or_name = company or recipient or brand or "Lightsource"
+        items = request_item.get("items", []) or [{}]
+        for _item in items:
+            row = LIGHTSOURCE_UPS_DEFAULT_ROW.copy()
+            row[0] = contact_name
+            row[1] = company_or_name
+            row[2] = cell_text(request_item.get("country", "")) or "US"
+            row[3] = cell_text(request_item.get("address_line_1", ""))
+            row[4] = cell_text(request_item.get("address_line_2", ""))
+            row[6] = cell_text(request_item.get("city", ""))
+            row[7] = cell_text(request_item.get("state", ""))
+            row[8] = cell_text(request_item.get("postal_code", ""))
+            row[9] = digits_only(cell_text(request_item.get("phone", "")))
+            row[12] = cell_text(request_item.get("email", ""))
+            row[13] = "2"
+            row[24] = "03"
+            row[32] = order
+            rows.append(row)
+    return rows
+
+
+def lightsource_carrier_preview_rows(fields: list[str], rows: list[list[str]]) -> list[dict[str, str]]:
+    preview: list[dict[str, str]] = []
+    for row in rows:
+        preview.append(dict(zip(fields, row)))
+    return preview
+
+
+def write_lightsource_carrier_import(requests: list[dict[str, Any]], carrier: str) -> Path:
+    carrier_label = "UPS" if carrier.upper() == "UPS" else "FedEx"
+    output_path = OUTPUT_DIR / f"Lightsource_{carrier_label}_Import_{uuid.uuid4().hex[:8]}.csv"
+    fields = LIGHTSOURCE_UPS_IMPORT_FIELDS if carrier_label == "UPS" else LIGHTSOURCE_FEDEX_IMPORT_FIELDS
+    rows = lightsource_ups_rows(requests) if carrier_label == "UPS" else lightsource_fedex_rows(requests)
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(fields)
         writer.writerows(rows)
     return output_path
 
@@ -2557,23 +2793,43 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
             requests = payload.get("requests", [])
+            carrier = cell_text(payload.get("carrier", "")).lower()
             if not requests:
                 self.send_json({"error": "Add at least one Lightsource order email first."}, HTTPStatus.BAD_REQUEST)
                 return
+            if carrier not in {"", "none", "fedex", "ups"}:
+                self.send_json({"error": "Choose FedEx, UPS, or no carrier import."}, HTTPStatus.BAD_REQUEST)
+                return
             output_path = write_lightsource_order_import(requests)
             rows = lightsource_order_rows(requests)
+            carrier_path = None
+            carrier_rows: list[list[str]] = []
+            carrier_fields: list[str] = []
+            carrier_label = ""
+            if carrier == "fedex":
+                carrier_label = "FedEx"
+                carrier_path = write_lightsource_carrier_import(requests, carrier_label)
+                carrier_rows = lightsource_fedex_rows(requests)
+                carrier_fields = LIGHTSOURCE_FEDEX_IMPORT_FIELDS
+            elif carrier == "ups":
+                carrier_label = "UPS"
+                carrier_path = write_lightsource_carrier_import(requests, carrier_label)
+                carrier_rows = lightsource_ups_rows(requests)
+                carrier_fields = LIGHTSOURCE_UPS_IMPORT_FIELDS
             report = lightsource_report_rows(requests)
         except Exception as exc:
             self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
-        self.send_json(
-            {
-                "download_url": f"/download/{output_path.name}",
-                "row_count": len(rows),
-                "preview": rows[:50],
-                "report_preview": report[:100],
-            }
-        )
+        response = {
+            "download_url": f"/download/{output_path.name}",
+            "row_count": len(rows),
+            "preview": rows[:50],
+            "report_preview": report[:100],
+            "carrier_label": carrier_label,
+            "carrier_download_url": f"/download/{carrier_path.name}" if carrier_path else "",
+            "carrier_preview": lightsource_carrier_preview_rows(carrier_fields, carrier_rows[:50]) if carrier_path else [],
+        }
+        self.send_json(response)
 
     def send_json(self, payload: dict[str, Any], status: HTTPStatus = HTTPStatus.OK) -> None:
         self.send_bytes(
@@ -2958,6 +3214,10 @@ HTML = r"""
       font: inherit;
       transition: border-color .16s ease, box-shadow .16s ease;
     }
+    .compact-control {
+      width: 190px;
+      flex: 0 0 190px;
+    }
     .preview {
       display: block;
       width: 100%;
@@ -3261,7 +3521,14 @@ HTML = r"""
         <h2>Lightsource Order List</h2>
         <div id="lightsourceList" class="subtle">No Lightsource emails added yet.</div>
         <div class="row">
-          <button id="lightsourceExport">Generate SB Import CSV</button>
+          <label class="compact-control">Carrier import
+            <select id="lightsourceCarrier">
+              <option value="none">None</option>
+              <option value="fedex">FedEx</option>
+              <option value="ups">UPS</option>
+            </select>
+          </label>
+          <button id="lightsourceExport">Generate Lightsource CSV</button>
         </div>
       </section>
 
@@ -3763,20 +4030,21 @@ HTML = r"""
         lightsourceStatusEl.textContent = "Add at least one Lightsource email first.";
         return;
       }
-      lightsourceStatusEl.textContent = "Generating Lightsource SB import...";
+      lightsourceStatusEl.textContent = "Generating Lightsource CSV...";
       document.querySelector("#lightsourceExport").disabled = true;
       try {
+        const carrier = document.querySelector("#lightsourceCarrier").value;
         const response = await fetch("/api/lightsource/export", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requests: lightsourceRequests }),
+          body: JSON.stringify({ requests: lightsourceRequests, carrier }),
         });
         const data = await response.json();
         if (!response.ok) {
           lightsourceStatusEl.textContent = data.error || "Could not generate Lightsource import.";
           return;
         }
-        lightsourceStatusEl.textContent = "Lightsource SB import CSV is ready.";
+        lightsourceStatusEl.textContent = data.carrier_label ? `Lightsource SB and ${data.carrier_label} CSV files are ready.` : "Lightsource SB CSV is ready.";
         renderLightsourceResult(data);
       } catch (error) {
         lightsourceStatusEl.textContent = "The server stopped responding while generating the Lightsource import.";
@@ -4133,11 +4401,13 @@ HTML = r"""
     function renderLightsourceResult(data) {
       const reportPreview = data.report_preview || [];
       const preview = data.preview || [];
+      const carrierPreview = data.carrier_preview || [];
       lightsourceResultEl.innerHTML = `
         <div class="success">
           <strong>${data.row_count} Lightsource item rows created.</strong>
           <div class="row">
             <a class="download" href="${data.download_url}">Download SB Import CSV</a>
+            ${data.carrier_download_url ? `<a class="download" href="${data.carrier_download_url}">Download ${escapeHtml(data.carrier_label)} Import CSV</a>` : ""}
           </div>
         </div>
         ${reportPreview.length ? `
@@ -4153,6 +4423,14 @@ HTML = r"""
             <summary><strong>SB Import Preview</strong></summary>
             <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
               ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+        ${carrierPreview.length ? `
+          <details open style="margin-top: 14px;">
+            <summary><strong>${escapeHtml(data.carrier_label)} Import Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(carrierPreview)}
             </div>
           </details>
         ` : ""}
