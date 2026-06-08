@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import cgi
+import html
 import io
 import json
 import mimetypes
@@ -30,8 +31,22 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.7"
+APP_VERSION = "1.8"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
+
+CODE128_PATTERNS = [
+    "212222", "222122", "222221", "121223", "121322", "131222", "122213", "122312", "132212", "221213",
+    "221312", "231212", "112232", "122132", "122231", "113222", "123122", "123221", "223211", "221132",
+    "221231", "213212", "223112", "312131", "311222", "321122", "321221", "312212", "322112", "322211",
+    "212123", "212321", "232121", "111323", "131123", "131321", "112313", "132113", "132311", "211313",
+    "231113", "231311", "112133", "112331", "132131", "113123", "113321", "133121", "313121", "211331",
+    "231131", "213113", "213311", "213131", "311123", "311321", "331121", "312113", "312311", "332111",
+    "314111", "221411", "431111", "111224", "111422", "121124", "121421", "141122", "141221", "112214",
+    "112412", "122114", "122411", "142112", "142211", "241211", "221114", "413111", "241112", "134111",
+    "111242", "121142", "121241", "114212", "124112", "124211", "411212", "421112", "421211", "212141",
+    "214121", "412121", "111143", "111341", "131141", "114113", "114311", "411113", "411311", "113141",
+    "114131", "311141", "411131", "211412", "211214", "211232", "2331112",
+]
 
 OUTPUT_FIELDS = [
     ("order_number", "Order Number"),
@@ -169,6 +184,55 @@ BULK_INBOUND_ALIASES = {
         "seal number",
     ],
     "notes": ["notes", "memo", "comments", "description", "product name", "item description"],
+}
+
+LABEL_ALIASES = {
+    "shipment_number": BULK_INBOUND_ALIASES["shipment_number"],
+    "carton_number": [
+        "carton number",
+        "carton #",
+        "carton no",
+        "carton id",
+        "box number",
+        "box #",
+        "box id",
+        "case number",
+        "case #",
+        "package number",
+        "package #",
+        "lp",
+        "lpn",
+        "license plate",
+    ],
+    "sku": BULK_INBOUND_ALIASES["sku"],
+    "product_name": [
+        "product name",
+        "item name",
+        "description",
+        "item description",
+        "product description",
+        "title",
+        "name",
+        "notes",
+    ],
+    "quantity": [
+        "qty",
+        "quantity",
+        "unit qty",
+        "units",
+        "eaches",
+        "pcs",
+        "pieces",
+        "item quantity",
+    ],
+    "cases": BULK_INBOUND_ALIASES["cases"],
+    "units_per_case": BULK_INBOUND_ALIASES["units_per_case"],
+    "lot": BULK_INBOUND_ALIASES["lot"],
+    "tracking": BULK_INBOUND_ALIASES["tracking"],
+    "po": ["po", "po #", "po number", "purchase order", "purchase order number"],
+    "vendor": ["vendor", "supplier", "brand", "customer", "company"],
+    "company_name": ["company name", "company name (from winit)", "customer name", "client name", "account name", "company", "customer", "vendor"],
+    "company_id": ["company id", "company id (from winit)", "winit company id", "winit id", "customer id", "client id", "account id"],
 }
 
 PRODUCT_VARIANT_SKU_ALIASES = [
@@ -809,7 +873,7 @@ def dataframe_to_smart_rows(df: pd.DataFrame) -> tuple[list[dict[str, str]], dic
     best_index = 0
     best_score = -1
     max_scan = min(len(raw), 25)
-    alias_terms = [normalized(alias) for aliases in BULK_INBOUND_ALIASES.values() for alias in aliases]
+    alias_terms = [normalized(alias) for aliases in [*BULK_INBOUND_ALIASES.values(), LABEL_ALIASES["company_name"], LABEL_ALIASES["company_id"]] for alias in aliases]
     for position in range(max_scan):
         values = [cell_text(value) for value in raw.iloc[position].tolist()]
         score = 0
@@ -995,6 +1059,707 @@ def write_bulk_inbound_report(report_rows_data: list[dict[str, str]]) -> Path:
         writer.writeheader()
         writer.writerows(report_rows_data)
     return output_path
+
+
+def load_product_variant_names(file_id: str) -> dict[str, str]:
+    if not file_id:
+        return {}
+    rows = load_file_rows(file_id)
+    names: dict[str, str] = {}
+    for row in rows:
+        sku = row_value(row, PRODUCT_VARIANT_SKU_ALIASES)
+        name = row_value(row, ["Product Name*", "Product Name", "Variant Name*", "Variant Name", "Description", "Title"])
+        if sku and name:
+            names[normalized(sku)] = name
+    return names
+
+
+def positive_int(value: Any, default: int = 0) -> int:
+    text = clean_number_for_upload(cell_text(value))
+    if not text:
+        return default
+    try:
+        parsed = int(float(text))
+    except ValueError:
+        return default
+    return parsed if parsed > 0 else default
+
+
+def label_value(row: dict[str, str], field: str, mapping: dict[str, str] | None = None) -> str:
+    if mapping and mapping.get(field):
+        value = value_from(row, mapping[field])
+        if value:
+            return value
+    return row_value(row, LABEL_ALIASES[field])
+
+
+def code128_svg(value: str, height: int = 62) -> str:
+    text = cell_text(value)[:80] or " "
+    codes = [104]
+    for char in text:
+        ordinal = ord(char)
+        codes.append((ordinal - 32) if 32 <= ordinal <= 126 else 0)
+    checksum = codes[0]
+    for index, code in enumerate(codes[1:], start=1):
+        checksum += code * index
+    codes.append(checksum % 103)
+    codes.append(106)
+
+    quiet_zone = 10
+    module = 1
+    x = quiet_zone
+    rects = []
+    for code in codes:
+        pattern = CODE128_PATTERNS[code]
+        for index, width_text in enumerate(pattern):
+            width = int(width_text) * module
+            if index % 2 == 0:
+                rects.append(f'<rect x="{x}" y="0" width="{width}" height="{height}"/>')
+            x += width
+    svg_width = max(x + quiet_zone, 1)
+    return (
+        f'<svg class="barcode" viewBox="0 0 {svg_width} {height}" preserveAspectRatio="xMidYMid meet" '
+        f'role="img" aria-label="Barcode {html.escape(text, quote=True)}">{"".join(rects)}</svg>'
+    )
+
+
+QR_L_DATA_CODEWORDS = {1: 19, 2: 34, 3: 55, 4: 80, 5: 108}
+QR_L_ECC_CODEWORDS = {1: 7, 2: 10, 3: 15, 4: 20, 5: 26}
+QR_TOTAL_CODEWORDS = {1: 26, 2: 44, 3: 70, 4: 100, 5: 134}
+
+
+def qr_gf_mul(x: int, y: int) -> int:
+    result = 0
+    while y:
+        if y & 1:
+            result ^= x
+        x <<= 1
+        if x & 0x100:
+            x ^= 0x11D
+        y >>= 1
+    return result
+
+
+def qr_gf_pow(power: int) -> int:
+    value = 1
+    for _ in range(power):
+        value = qr_gf_mul(value, 2)
+    return value
+
+
+def qr_generator_poly(degree: int) -> list[int]:
+    result = [1]
+    for i in range(degree):
+        root = qr_gf_pow(i)
+        result = [qr_gf_mul(coef, root) for coef in result] + [0]
+        for j in range(len(result) - 1):
+            result[j + 1] ^= result[j]
+    return result
+
+
+def qr_reed_solomon(data: list[int], degree: int) -> list[int]:
+    generator = qr_generator_poly(degree)
+    remainder = [0] * degree
+    for byte in data:
+        factor = byte ^ remainder.pop(0)
+        remainder.append(0)
+        for i, coef in enumerate(generator[1:]):
+            remainder[i] ^= qr_gf_mul(coef, factor)
+    return remainder
+
+
+def qr_append_bits(bits: list[int], value: int, length: int) -> None:
+    for i in range(length - 1, -1, -1):
+        bits.append((value >> i) & 1)
+
+
+def qr_data_codewords(text: str, version: int) -> list[int]:
+    payload = text.encode("utf-8")[:QR_L_DATA_CODEWORDS[version] - 2]
+    bits: list[int] = []
+    qr_append_bits(bits, 0b0100, 4)
+    qr_append_bits(bits, len(payload), 8)
+    for byte in payload:
+        qr_append_bits(bits, byte, 8)
+    capacity_bits = QR_L_DATA_CODEWORDS[version] * 8
+    qr_append_bits(bits, 0, min(4, capacity_bits - len(bits)))
+    while len(bits) % 8:
+        bits.append(0)
+    codewords = [
+        int("".join(str(bit) for bit in bits[i : i + 8]), 2)
+        for i in range(0, len(bits), 8)
+    ]
+    pad = 0xEC
+    while len(codewords) < QR_L_DATA_CODEWORDS[version]:
+        codewords.append(pad)
+        pad = 0x11 if pad == 0xEC else 0xEC
+    return codewords
+
+
+def qr_draw_finder(matrix: list[list[int | None]], function: list[list[bool]], row: int, col: int) -> None:
+    size = len(matrix)
+    for r in range(-1, 8):
+        for c in range(-1, 8):
+            rr, cc = row + r, col + c
+            if not (0 <= rr < size and 0 <= cc < size):
+                continue
+            is_dark = 0 <= r <= 6 and 0 <= c <= 6 and (r in {0, 6} or c in {0, 6} or (2 <= r <= 4 and 2 <= c <= 4))
+            matrix[rr][cc] = 1 if is_dark else 0
+            function[rr][cc] = True
+
+
+def qr_draw_alignment(matrix: list[list[int | None]], function: list[list[bool]], center: int) -> None:
+    for r in range(-2, 3):
+        for c in range(-2, 3):
+            rr, cc = center + r, center + c
+            is_dark = max(abs(r), abs(c)) in {0, 2}
+            matrix[rr][cc] = 1 if is_dark else 0
+            function[rr][cc] = True
+
+
+def qr_format_bits(mask: int = 0) -> int:
+    data = (0b01 << 3) | mask
+    value = data << 10
+    generator = 0x537
+    for i in range(14, 9, -1):
+        if (value >> i) & 1:
+            value ^= generator << (i - 10)
+    return ((data << 10) | value) ^ 0x5412
+
+
+def qr_matrix(text: str) -> list[list[int]]:
+    byte_len = len(text.encode("utf-8"))
+    version = next((v for v, capacity in QR_L_DATA_CODEWORDS.items() if byte_len <= capacity - 2), 5)
+    size = 21 + 4 * (version - 1)
+    matrix: list[list[int | None]] = [[None for _ in range(size)] for _ in range(size)]
+    function = [[False for _ in range(size)] for _ in range(size)]
+
+    qr_draw_finder(matrix, function, 0, 0)
+    qr_draw_finder(matrix, function, 0, size - 7)
+    qr_draw_finder(matrix, function, size - 7, 0)
+
+    for i in range(8, size - 8):
+        bit = 1 if i % 2 == 0 else 0
+        matrix[6][i] = bit
+        matrix[i][6] = bit
+        function[6][i] = True
+        function[i][6] = True
+
+    if version >= 2:
+        qr_draw_alignment(matrix, function, size - 7)
+
+    matrix[4 * version + 9][8] = 1
+    function[4 * version + 9][8] = True
+
+    data = qr_data_codewords(text, version)
+    data.extend(qr_reed_solomon(data, QR_L_ECC_CODEWORDS[version]))
+    bits = [(byte >> i) & 1 for byte in data for i in range(7, -1, -1)]
+    bit_index = 0
+    direction = -1
+    row = size - 1
+    col = size - 1
+    while col > 0:
+        if col == 6:
+            col -= 1
+        for _ in range(size):
+            for offset in range(2):
+                cc = col - offset
+                if not function[row][cc]:
+                    bit = bits[bit_index] if bit_index < len(bits) else 0
+                    if (row + cc) % 2 == 0:
+                        bit ^= 1
+                    matrix[row][cc] = bit
+                    bit_index += 1
+            row += direction
+            if row < 0 or row >= size:
+                row -= direction
+                direction *= -1
+                break
+        col -= 2
+
+    fmt = qr_format_bits(0)
+    for i in range(15):
+        bit = (fmt >> i) & 1
+        if i < 6:
+            coords = [(8, i)]
+        elif i == 6:
+            coords = [(8, 7)]
+        elif i == 7:
+            coords = [(8, 8)]
+        elif i == 8:
+            coords = [(7, 8)]
+        else:
+            coords = [(14 - i, 8)]
+        coords.append((size - 1 - i, 8) if i < 8 else (8, size - 15 + i))
+        for rr, cc in coords:
+            matrix[rr][cc] = bit
+            function[rr][cc] = True
+
+    return [[int(cell or 0) for cell in row_values] for row_values in matrix]
+
+
+def qr_svg(value: str) -> str:
+    text = cell_text(value) or " "
+    matrix = qr_matrix(text)
+    quiet = 4
+    size = len(matrix)
+    rects = []
+    for r, row in enumerate(matrix):
+        for c, bit in enumerate(row):
+            if bit:
+                rects.append(f'<rect x="{c + quiet}" y="{r + quiet}" width="1" height="1"/>')
+    view = size + quiet * 2
+    return (
+        f'<svg class="qr-code" viewBox="0 0 {view} {view}" preserveAspectRatio="xMidYMid meet" '
+        f'role="img" aria-label="QR {html.escape(text, quote=True)}">{"".join(rects)}</svg>'
+    )
+
+
+def label_item_from_row(row: dict[str, str], mapping: dict[str, str], product_names: dict[str, str]) -> dict[str, str] | None:
+    sku = label_value(row, "sku", mapping).strip()
+    if not sku:
+        return None
+    product_name = label_value(row, "product_name") or product_names.get(normalized(sku), "")
+    quantity = label_value(row, "quantity")
+    units_per_case = label_value(row, "units_per_case", mapping)
+    qty = clean_number_for_upload(quantity) or clean_number_for_upload(units_per_case) or "1"
+    return {
+        "sku": sku,
+        "product_name": product_name,
+        "qty": qty,
+        "lot": label_value(row, "lot", mapping),
+    }
+
+
+def build_inbound_label_groups(
+    documents: list[UploadStorage],
+    variant_upload: UploadStorage | None = None,
+    allow_company_only: bool = False,
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    product_names: dict[str, str] = {}
+    if variant_upload:
+        product_file_id, _filename = save_upload(variant_upload)
+        product_names = load_product_variant_names(product_file_id)
+
+    groups: dict[str, dict[str, Any]] = {}
+    auto_sequence = 0
+    report: list[dict[str, str]] = []
+
+    for document in documents:
+        filename, rows, mapping = read_bulk_customer_document(document)
+        defaults = shipment_level_values(rows)
+        for row_index, row in enumerate(rows, start=1):
+            item = label_item_from_row(row, mapping, product_names)
+            source_row = row.get("_source_row", str(row_index))
+            if not item and allow_company_only and (label_value(row, "company_name") or label_value(row, "company_id")):
+                item = {"sku": "", "product_name": "", "qty": "", "lot": ""}
+            if not item:
+                report.append({"Source File": filename, "Source Row": source_row, "Carton": "", "SKU": "", "Qty": "", "Status": "Skipped: missing SKU"})
+                continue
+
+            shipment = label_value(row, "shipment_number", mapping) or defaults.get("shipment_number", "") or Path(filename).stem
+            carton = label_value(row, "carton_number")
+            tracking = label_value(row, "tracking", mapping) or defaults.get("tracking", "")
+            po = label_value(row, "po") or shipment
+            vendor = label_value(row, "vendor")
+            company_name = label_value(row, "company_name") or vendor
+            company_id = label_value(row, "company_id")
+            cases = positive_int(label_value(row, "cases", mapping), 1)
+            units_per_case = clean_number_for_upload(label_value(row, "units_per_case", mapping)) or item["qty"] or "1"
+
+            if carton:
+                key = f"{filename}|{shipment}|{carton}"
+                group = groups.setdefault(
+                    key,
+                    {
+                        "shipment": shipment,
+                        "carton": carton,
+                        "tracking": tracking,
+                        "po": po,
+                        "vendor": vendor,
+                        "company_name": company_name,
+                        "company_id": company_id,
+                        "source_file": filename,
+                        "items": [],
+                    },
+                )
+                group["company_name"] = group.get("company_name") or company_name
+                group["company_id"] = group.get("company_id") or company_id
+                group["items"].append(item)
+                report.append({"Source File": filename, "Source Row": source_row, "Carton": carton, "SKU": item["sku"], "Qty": item["qty"], "Status": "Grouped by carton number"})
+            else:
+                for case_index in range(1, max(cases, 1) + 1):
+                    auto_sequence += 1
+                    carton_id = f"AUTO-{auto_sequence:04d}"
+                    group = {
+                        "shipment": shipment,
+                        "carton": carton_id,
+                        "tracking": tracking,
+                        "po": po,
+                        "vendor": vendor,
+                        "company_name": company_name,
+                        "company_id": company_id,
+                        "source_file": filename,
+                        "items": [{**item, "qty": units_per_case}],
+                    }
+                    groups[f"{filename}|{shipment}|{carton_id}"] = group
+                report.append({"Source File": filename, "Source Row": source_row, "Carton": f"{cases} auto label(s)", "SKU": item["sku"], "Qty": units_per_case, "Status": "Expanded from carton/case count"})
+
+    labels = list(groups.values())
+    labels.sort(key=lambda group: (cell_text(group.get("shipment")), natural_label_sort(cell_text(group.get("carton")))))
+    shipment_totals: dict[str, int] = {}
+    shipment_indexes: dict[str, int] = {}
+    for group in labels:
+        shipment_key = cell_text(group.get("shipment"))
+        shipment_totals[shipment_key] = shipment_totals.get(shipment_key, 0) + 1
+
+    total = len(labels)
+    for index, group in enumerate(labels, start=1):
+        shipment_key = cell_text(group.get("shipment"))
+        shipment_indexes[shipment_key] = shipment_indexes.get(shipment_key, 0) + 1
+        unique_skus = {normalized(item["sku"]) for item in group["items"] if normalized(item["sku"])}
+        total_units = sum(positive_int(item.get("qty"), 1) for item in group["items"])
+        group["label_index"] = index
+        group["label_total"] = total
+        group["b3_inbound"] = "B3 Inbound"
+        group["carton_type"] = "Mixed SKU" if len(unique_skus) > 1 else "Single SKU"
+        group["inbound_type"] = "A+" if total_units == 1 else "A" if len(unique_skus) <= 1 else "B" if len(unique_skus) <= 3 else "C"
+        group["carton_sequence"] = f"{shipment_indexes[shipment_key]} of {shipment_totals[shipment_key]} cartons/pallets"
+    return labels, report
+
+
+def natural_label_sort(value: str) -> tuple[Any, ...]:
+    parts = re.split(r"(\d+)", value)
+    return tuple(int(part) if part.isdigit() else part.lower() for part in parts)
+
+
+def render_inbound_labels_html(labels: list[dict[str, Any]]) -> str:
+    label_pages = []
+    for label in labels:
+        items = label["items"]
+        inbound_id = cell_text(label.get("shipment", ""))
+        item_rows = "".join(
+            "<tr>"
+            f"<td>{html.escape(item.get('sku', ''))}</td>"
+            f"<td>{html.escape(item.get('qty', ''))}</td>"
+            f"<td class=\"long-text\">{html.escape(item.get('lot', '') or item.get('product_name', ''))}</td>"
+            "</tr>"
+            for item in items[:8]
+        )
+        extra_note = f'<div class="more">+ {len(items) - 8} more SKU line(s)</div>' if len(items) > 8 else ""
+        unique_lots = []
+        seen_lots = set()
+        for item in items:
+            lot = cell_text(item.get("lot", ""))
+            if lot and lot not in seen_lots:
+                unique_lots.append(lot)
+                seen_lots.add(lot)
+        lot_barcodes = "".join(
+            f'<div class="lot-barcode">{code128_svg(lot, 34)}<span>{html.escape(lot)}</span></div>'
+            for lot in unique_lots[:3]
+        )
+        lot_note = f'<div class="more">+ {len(unique_lots) - 3} more LOT ID(s) in review report</div>' if len(unique_lots) > 3 else ""
+        label_pages.append(
+            f"""
+            <section class="label">
+              <div class="top">
+                <div>
+                  <div class="eyebrow">Inbound Carton</div>
+                  <h1>{html.escape(label.get("carton_type", ""))}</h1>
+                </div>
+                <div class="carton-count">Carton {html.escape(str(label.get("label_index", "")))} / {html.escape(str(label.get("label_total", "")))}</div>
+              </div>
+              <div class="meta">
+                <div><span>Shipment</span><strong>{html.escape(label.get("shipment", ""))}</strong></div>
+                <div><span>Carton</span><strong>{html.escape(label.get("carton", ""))}</strong></div>
+                <div><span>PO / Ref</span><strong>{html.escape(label.get("po", ""))}</strong></div>
+                <div><span>Tracking</span><strong>{html.escape(label.get("tracking", ""))}</strong></div>
+              </div>
+              <div class="scan-block">
+                <span>Inbound ID</span>
+                <strong>{html.escape(inbound_id)}</strong>
+                {code128_svg(inbound_id, 52)}
+              </div>
+              <table>
+                <thead><tr><th>SKU</th><th>Qty</th><th>LOT ID / Detail</th></tr></thead>
+                <tbody>{item_rows}</tbody>
+              </table>
+              {extra_note}
+              <div class="lot-scan-wrap">
+                {lot_barcodes or '<div class="muted-scan">No LOT ID provided</div>'}
+                {lot_note}
+              </div>
+              <div class="foot">
+                <span>{html.escape(label.get("vendor", ""))}</span>
+                <span>{html.escape(label.get("source_file", ""))}</span>
+              </div>
+            </section>
+            """
+        )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Inbound Carton Labels</title>
+  <style>
+    @page {{ size: 4in 6in; margin: 0; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; background: #d8dee8; color: #111827; font-family: Arial, Helvetica, sans-serif; }}
+    .label {{
+      width: 4in;
+      height: 6in;
+      page-break-after: always;
+      break-after: page;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto auto;
+      gap: .08in;
+      padding: .18in;
+      background: #fff;
+      overflow: hidden;
+    }}
+    .top, .foot {{ display: flex; justify-content: space-between; gap: .08in; align-items: flex-start; }}
+    .eyebrow, .meta span, .scan-block span {{ color: #4b5563; font-size: 8pt; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }}
+    h1 {{ margin: .02in 0 0; font-size: 22pt; line-height: 1; }}
+    .carton-count {{ border: 2px solid #111827; padding: .05in .08in; font-size: 11pt; font-weight: 800; white-space: nowrap; }}
+    .meta {{ display: grid; grid-template-columns: 1fr 1fr; gap: .06in; }}
+    .meta div {{ min-width: 0; border: 1px solid #d1d5db; padding: .05in; }}
+    .meta strong {{ display: block; min-height: .18in; overflow-wrap: anywhere; font-size: 10pt; line-height: 1.1; }}
+    .scan-block {{ display: grid; gap: .035in; border-top: 3px solid #111827; border-bottom: 1px solid #111827; padding: .06in 0; }}
+    .scan-block strong {{ display: block; font-size: 18pt; line-height: 1.05; overflow-wrap: anywhere; }}
+    table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
+    th, td {{ border-bottom: 1px solid #e5e7eb; padding: .035in .025in; text-align: left; font-size: 8.5pt; line-height: 1.08; overflow: hidden; }}
+    th {{ color: #4b5563; font-size: 7.5pt; text-transform: uppercase; }}
+    th:nth-child(1), td:nth-child(1) {{ width: 42%; }}
+    th:nth-child(2), td:nth-child(2) {{ width: 13%; text-align: right; }}
+    th:nth-child(3), td:nth-child(3) {{ width: 45%; }}
+    .long-text {{ overflow-wrap: anywhere; word-break: break-word; font-size: 7.8pt; }}
+    .more {{ font-size: 8pt; font-weight: 700; }}
+    .barcode {{ width: 100%; height: .42in; fill: #000; shape-rendering: crispEdges; }}
+    .lot-scan-wrap {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .04in; text-align: center; font-size: 6.6pt; font-weight: 700; overflow: hidden; }}
+    .lot-barcode {{ min-width: 0; display: grid; gap: .015in; }}
+    .lot-barcode .barcode {{ height: .3in; }}
+    .lot-barcode span {{ overflow-wrap: anywhere; word-break: break-word; line-height: 1.05; max-height: .22in; overflow: hidden; }}
+    .lot-scan-wrap .more, .muted-scan {{ grid-column: 1 / -1; }}
+    .muted-scan {{ color: #6b7280; font-size: 8pt; font-weight: 700; text-align: left; }}
+    .foot {{ color: #4b5563; font-size: 7pt; min-height: .14in; }}
+    @media screen {{
+      body {{ padding: .25in; display: grid; gap: .2in; justify-content: center; }}
+      .label {{ box-shadow: 0 14px 34px rgba(15, 23, 42, .2); page-break-after: auto; }}
+    }}
+    @media print {{
+      body {{ background: #fff; }}
+    }}
+  </style>
+</head>
+<body>
+  {"".join(label_pages)}
+</body>
+</html>"""
+
+
+def write_inbound_label_report(report_rows_data: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"inbound_label_review_{uuid.uuid4().hex[:8]}.csv"
+    fieldnames = ["Source File", "Source Row", "Carton", "SKU", "Qty", "Status"]
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(report_rows_data)
+    return output_path
+
+
+DESIGNER_ALLOWED_FIELDS = {
+    "b3_inbound": "B3 Inbound",
+    "company_name": "Company Name",
+    "company_id": "Company ID",
+    "shipment": "Inbound ID",
+    "carton": "Carton ID",
+    "tracking": "Tracking",
+    "po": "PO / Ref",
+    "vendor": "Vendor",
+    "carton_type": "Carton Type",
+    "inbound_type": "Inbound Type",
+    "carton_sequence": "Carton / Pallet Count",
+    "sku": "SKU",
+    "qty": "Qty",
+    "lot": "LOT ID",
+    "detail": "LOT ID / Detail",
+    "product_name": "Product Name",
+}
+
+
+def label_field_value(label: dict[str, Any], item: dict[str, str], field: str) -> str:
+    if field == "detail":
+        return cell_text(item.get("lot") or item.get("product_name"))
+    if field in item:
+        return cell_text(item.get(field))
+    if field in label:
+        return cell_text(label.get(field))
+    return ""
+
+
+def designer_value(label: dict[str, Any], field: str, fallback: str = "") -> str:
+    items = label.get("items") or []
+    item = items[0] if items else {}
+    value = label_field_value(label, item, field)
+    if not value and fallback:
+        value = label_field_value(label, item, fallback)
+    return value
+
+
+def render_designer_label_html(labels: list[dict[str, Any]], template: dict[str, Any]) -> str:
+    elements = template.get("elements") if isinstance(template.get("elements"), list) else []
+    if not elements:
+        elements = default_label_template()["elements"]
+    landscape = template.get("preset") == "blindReceive"
+    page_width = 6.0 if landscape else 4.0
+    page_height = 4.0 if landscape else 6.0
+    pages = []
+    for label in labels:
+        items = label.get("items") or []
+        rendered = []
+        for element in elements:
+            element_type = cell_text(element.get("type") or "text")
+            field = cell_text(element.get("field") or "shipment")
+            fallback = cell_text(element.get("fallback") or "")
+            title = cell_text(element.get("title")) if "title" in element else DESIGNER_ALLOWED_FIELDS.get(field, field)
+            x = max(0.0, min(page_width, float(element.get("x") or 0)))
+            y = max(0.0, min(page_height, float(element.get("y") or 0)))
+            w = max(0.15, min(page_width - x, float(element.get("w") or 1)))
+            h = max(0.15, min(page_height - y, float(element.get("h") or 0.4)))
+            size = max(6, min(34, int(float(element.get("size") or 10))))
+            value = designer_value(label, field, fallback)
+            style = f'left:{x}in;top:{y}in;width:{w}in;height:{h}in;font-size:{size}pt;'
+            if element_type == "barcode":
+                rendered.append(
+                    f'<div class="designer-el barcode-el" style="{style}"><span>{html.escape(title)}</span>{code128_svg(value, 48)}<strong>{html.escape(value)}</strong></div>'
+                )
+            elif element_type == "table":
+                rows = "".join(
+                    "<tr>"
+                    f"<td>{html.escape(cell_text(item.get('sku')))} x {html.escape(cell_text(item.get('qty') or '1'))}</td>"
+                    "</tr>"
+                    for item in items[:8]
+                )
+                rendered.append(
+                    f'<div class="designer-el table-el" style="{style}"><table><thead><tr><th>SKU x Qty</th></tr></thead><tbody>{rows}</tbody></table></div>'
+                )
+            elif element_type == "qr":
+                rendered.append(
+                    f'<div class="designer-el qr-el" style="{style}"><span>{html.escape(title)}</span>{qr_svg(value)}<strong>{html.escape(value)}</strong></div>'
+                )
+            else:
+                rendered.append(
+                    f'<div class="designer-el text-el" style="{style}"><span>{html.escape(title)}</span><strong>{html.escape(value)}</strong></div>'
+                )
+        pages.append(f'<section class="designer-label">{"".join(rendered)}</section>')
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Custom Labels</title>
+  <style>
+    @page {{ size: {page_width:g}in {page_height:g}in; margin: 0; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; background: #d8dee8; color: #111827; font-family: Arial, Helvetica, sans-serif; }}
+    .designer-label {{ position: relative; width: {page_width:g}in; height: {page_height:g}in; page-break-after: always; break-after: page; background: #fff; overflow: hidden; }}
+    .designer-el {{ position: absolute; overflow: hidden; padding: .035in; border: 1px solid transparent; }}
+    .designer-el span {{ display: block; color: #4b5563; font-size: 7pt; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; line-height: 1.1; }}
+    .designer-el strong {{ display: block; overflow-wrap: anywhere; line-height: 1.06; }}
+    .text-el strong {{ margin-top: .02in; }}
+    .barcode-el {{ display: grid; grid-template-rows: auto 1fr auto; gap: .015in; text-align: center; }}
+    .barcode {{ width: 100%; height: 100%; fill: #000; shape-rendering: crispEdges; }}
+    .barcode-el strong {{ font-size: 7pt; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+    .table-el {{ padding: 0; }}
+    table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
+    th, td {{ border-bottom: 1px solid #e5e7eb; padding: .03in; text-align: left; font-size: 7.5pt; line-height: 1.05; overflow-wrap: anywhere; }}
+    th {{ color: #4b5563; font-size: 6.6pt; text-transform: uppercase; }}
+    th:nth-child(1), td:nth-child(1) {{ width: 42%; }}
+    th:nth-child(2), td:nth-child(2) {{ width: 13%; text-align: right; }}
+    th:nth-child(3), td:nth-child(3) {{ width: 45%; }}
+    .qr-el {{ display: grid; grid-template-rows: auto minmax(0, 1fr) auto; justify-items: center; gap: .02in; text-align: center; }}
+    .qr-code {{ width: auto; max-width: 100%; height: 100%; max-height: 100%; aspect-ratio: 1; fill: #000; shape-rendering: crispEdges; }}
+    @media screen {{
+      body {{ padding: .25in; display: grid; gap: .2in; justify-content: center; }}
+      .designer-label {{ box-shadow: 0 14px 34px rgba(15, 23, 42, .2); page-break-after: auto; }}
+      .designer-el {{ border-color: #e5e7eb; }}
+    }}
+    @media print {{ body {{ background: #fff; }} }}
+  </style>
+</head>
+<body>{"".join(pages)}</body>
+</html>"""
+
+
+def default_label_template() -> dict[str, Any]:
+    return {
+        "elements": [
+            {"type": "text", "field": "carton_type", "title": "Label Type", "x": 0.18, "y": 0.15, "w": 2.0, "h": 0.32, "size": 18},
+            {"type": "text", "field": "carton", "title": "Carton", "x": 2.55, "y": 0.16, "w": 1.25, "h": 0.3, "size": 12},
+            {"type": "text", "field": "shipment", "title": "Inbound ID", "x": 0.18, "y": 0.62, "w": 3.64, "h": 0.34, "size": 16},
+            {"type": "barcode", "field": "shipment", "title": "Scan Inbound ID", "x": 0.25, "y": 1.02, "w": 3.5, "h": 0.64, "size": 8},
+            {"type": "table", "field": "sku", "title": "Items", "x": 0.18, "y": 1.82, "w": 3.64, "h": 2.1, "size": 8},
+            {"type": "barcode", "field": "lot", "fallback": "detail", "title": "Scan LOT ID", "x": 0.25, "y": 4.18, "w": 3.5, "h": 0.64, "size": 8},
+            {"type": "text", "field": "po", "title": "PO / Ref", "x": 0.18, "y": 5.15, "w": 1.75, "h": 0.32, "size": 9},
+            {"type": "text", "field": "tracking", "title": "Tracking", "x": 2.0, "y": 5.15, "w": 1.82, "h": 0.32, "size": 9},
+        ]
+    }
+
+
+def build_custom_labels_from_uploads(
+    documents: list[UploadStorage],
+    variant_upload: UploadStorage | None,
+    template: dict[str, Any],
+) -> dict[str, Any]:
+    labels, report = build_inbound_label_groups(documents, variant_upload, allow_company_only=template.get("preset") == "blindReceive")
+    if not labels:
+        raise ValueError("No labels could be created. Blind Receive needs Company Name or Company ID; other labels need at least SKU plus carton/case quantity.")
+    label_path = OUTPUT_DIR / f"custom_labels_{uuid.uuid4().hex[:8]}.html"
+    label_path.write_text(render_designer_label_html(labels, template), encoding="utf-8")
+    report_path = write_inbound_label_report(report)
+    return {
+        "download_url": f"/download/{label_path.name}",
+        "report_url": f"/download/{report_path.name}",
+        "label_count": len(labels),
+        "preview": [
+            {
+                "Carton": label.get("carton", ""),
+                "Type": label.get("carton_type", ""),
+                "Inbound ID": label.get("shipment", ""),
+                "Items": "; ".join(f"{item['sku']} x {item['qty']}" for item in label["items"][:4]),
+            }
+            for label in labels[:25]
+        ],
+    }
+
+
+def build_inbound_labels_from_uploads(
+    documents: list[UploadStorage],
+    variant_upload: UploadStorage | None = None,
+) -> dict[str, Any]:
+    labels, report = build_inbound_label_groups(documents, variant_upload)
+    if not labels:
+        raise ValueError("No carton labels could be created. Upload an inbound document with at least SKU plus carton/case quantity.")
+    label_path = OUTPUT_DIR / f"inbound_carton_labels_{uuid.uuid4().hex[:8]}.html"
+    label_path.write_text(render_inbound_labels_html(labels), encoding="utf-8")
+    report_path = write_inbound_label_report(report)
+    preview = []
+    for label in labels[:25]:
+        preview.append(
+            {
+                "Carton": label.get("carton", ""),
+                "Type": label.get("carton_type", ""),
+                "Shipment": label.get("shipment", ""),
+                "SKU Count": len({item["sku"] for item in label["items"]}),
+                "Items": "; ".join(f"{item['sku']} x {item['qty']}" for item in label["items"][:4]),
+            }
+        )
+    return {
+        "download_url": f"/download/{label_path.name}",
+        "report_url": f"/download/{report_path.name}",
+        "label_count": len(labels),
+        "mixed_count": sum(1 for label in labels if label.get("carton_type") == "Mixed SKU"),
+        "single_count": sum(1 for label in labels if label.get("carton_type") == "Single SKU"),
+        "preview": preview,
+    }
 
 
 def product_variant_upload_row(source: dict[str, str]) -> list[str]:
@@ -2501,6 +3266,9 @@ class ShipmentHandler(BaseHTTPRequestHandler):
         if self.path == "/api/update-check":
             self.send_json(check_for_update())
             return
+        if self.path == "/template/inbound-labels.csv":
+            self.download_inbound_labels_template()
+            return
         if self.path.startswith("/download/"):
             filename = Path(unquote(self.path.split("/download/", 1)[1])).name
             path = OUTPUT_DIR / filename
@@ -2512,6 +3280,34 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             self.send_bytes(path.read_bytes(), mime, headers)
             return
         self.send_json({"error": "Not found."}, HTTPStatus.NOT_FOUND)
+
+    def download_inbound_labels_template(self) -> None:
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "Shipment #",
+            "Carton #",
+            "SKU",
+            "Product Name",
+            "Qty",
+            "Cases",
+            "Units per Case",
+            "Lot ID",
+            "Tracking Info",
+            "PO Number",
+            "Vendor",
+            "Company Name",
+            "Company ID",
+        ])
+        writer.writerow(["INB-1001", "C001", "SKU-RED-S", "Red Shirt Small", "6", "1", "6", "2026060512345678901234567890", "1Z999999999", "PO-12345", "Sample Brand", "Sample Company", "WINIT-12345"])
+        writer.writerow(["INB-1001", "C001", "SKU-BLUE-M", "Blue Shirt Medium", "4", "1", "4", "LOT-B", "1Z999999999", "PO-12345", "Sample Brand", "Sample Company", "WINIT-12345"])
+        writer.writerow(["INB-1001", "", "SKU-GREEN-L", "Green Shirt Large", "", "2", "12", "", "1Z999999999", "PO-12345", "Sample Brand", "Sample Company", "WINIT-12345"])
+        data = output.getvalue().encode("utf-8-sig")
+        self.send_bytes(
+            data,
+            "text/csv; charset=utf-8",
+            headers={"Content-Disposition": 'attachment; filename="inbound-carton-label-template.csv"'},
+        )
 
     def do_POST(self) -> None:
         if self.path == "/api/shutdown":
@@ -2532,6 +3328,12 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/bulk-inbound/generate":
             self.handle_bulk_inbound_generate()
+            return
+        if self.path == "/api/inbound-labels/generate":
+            self.handle_inbound_labels_generate()
+            return
+        if self.path == "/api/label-designer/generate":
+            self.handle_label_designer_generate()
             return
         if self.path == "/api/product-variants/generate":
             self.handle_product_variants_generate()
@@ -2705,6 +3507,74 @@ class ShipmentHandler(BaseHTTPRequestHandler):
                 self.send_json({"error": "Upload at least one customer document first."}, HTTPStatus.BAD_REQUEST)
                 return
             result = build_bulk_inbound_from_uploads(documents, variant_upload)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(result)
+
+    def handle_inbound_labels_generate(self) -> None:
+        try:
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            document_fields = form["documents"] if "documents" in form else []
+            if not isinstance(document_fields, list):
+                document_fields = [document_fields]
+            documents = [
+                UploadStorage(field.filename or "document", field.file)
+                for field in document_fields
+                if getattr(field, "filename", None)
+            ]
+            variant_field = form["product_variants"] if "product_variants" in form else None
+            variant_upload = None
+            if variant_field is not None and getattr(variant_field, "filename", None):
+                variant_upload = UploadStorage(variant_field.filename, variant_field.file)
+            if not documents:
+                self.send_json({"error": "Upload at least one inbound document first."}, HTTPStatus.BAD_REQUEST)
+                return
+            result = build_inbound_labels_from_uploads(documents, variant_upload)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(result)
+
+    def handle_label_designer_generate(self) -> None:
+        try:
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            document_fields = form["documents"] if "documents" in form else []
+            if not isinstance(document_fields, list):
+                document_fields = [document_fields]
+            documents = [
+                UploadStorage(field.filename or "document", field.file)
+                for field in document_fields
+                if getattr(field, "filename", None)
+            ]
+            variant_field = form["product_variants"] if "product_variants" in form else None
+            variant_upload = None
+            if variant_field is not None and getattr(variant_field, "filename", None):
+                variant_upload = UploadStorage(variant_field.filename, variant_field.file)
+            template_text = form.getvalue("template") if "template" in form else "{}"
+            template = json.loads(template_text or "{}")
+            if not isinstance(template, dict):
+                template = {}
+            if not documents:
+                self.send_json({"error": "Upload at least one label source document first."}, HTTPStatus.BAD_REQUEST)
+                return
+            result = build_custom_labels_from_uploads(documents, variant_upload, template)
         except Exception as exc:
             self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
@@ -3352,11 +4222,224 @@ HTML = r"""
       outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
+    .designer-shell {
+      display: grid;
+      grid-template-columns: minmax(340px, 1fr) minmax(320px, 430px);
+      gap: 16px;
+      align-items: start;
+    }
+    .designer-controls, .designer-preview-panel {
+      min-width: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .designer-list {
+      display: grid;
+      gap: 7px;
+      max-height: 260px;
+      overflow: auto;
+      padding-right: 3px;
+    }
+    .designer-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      cursor: pointer;
+    }
+    .designer-item.active {
+      border-color: var(--brand);
+      box-shadow: inset 3px 0 0 var(--brand);
+    }
+    .designer-item strong { overflow-wrap: anywhere; }
+    .designer-editor {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+    .designer-editor label {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .designer-editor input, .designer-editor select {
+      width: 100%;
+      min-height: 34px;
+      padding: 7px 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: var(--radius-sm);
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+    }
+    .label-preview-canvas {
+      position: relative;
+      width: min(100%, 4in);
+      aspect-ratio: 4 / 6;
+      margin: 0 auto;
+      border: 1px solid #111827;
+      background: #fff;
+      box-shadow: 0 14px 34px rgba(15, 23, 42, .16);
+      overflow: visible;
+    }
+    .label-preview-canvas.landscape {
+      width: min(100%, 6in);
+      aspect-ratio: 6 / 4;
+    }
+    .preview-el {
+      position: absolute;
+      min-width: 8px;
+      min-height: 8px;
+      overflow: hidden;
+      padding: 3px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #111827;
+      cursor: pointer;
+      user-select: none;
+      touch-action: none;
+    }
+    .preview-el.active {
+      border: 2px solid var(--brand);
+      background: rgba(255, 255, 255, .9);
+      overflow: visible;
+    }
+    .preview-delete {
+      position: absolute;
+      top: -15px;
+      right: -10px;
+      z-index: 45;
+      width: 16px;
+      height: 16px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: #b42318;
+      font: 900 13px/1 Arial, sans-serif;
+      cursor: pointer;
+      box-shadow: none;
+      padding: 0;
+      min-height: 0;
+    }
+    .preview-delete:hover, .preview-delete:focus-visible { background: transparent; color: #7f1d1d; box-shadow: none; }
+    .resize-handle {
+      position: absolute;
+      z-index: 44;
+      width: 10px;
+      height: 10px;
+      border: 1px solid #fff;
+      border-radius: 999px;
+      background: var(--brand);
+      box-shadow: 0 1px 4px rgba(16, 35, 63, .22);
+    }
+    .resize-handle.nw { left: -6px; top: -6px; cursor: nwse-resize; }
+    .resize-handle.n { left: 50%; top: -6px; transform: translateX(-50%); cursor: ns-resize; }
+    .resize-handle.ne { right: -6px; top: -6px; cursor: nesw-resize; }
+    .resize-handle.e { right: -6px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+    .resize-handle.se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+    .resize-handle.s { left: 50%; bottom: -6px; transform: translateX(-50%); cursor: ns-resize; }
+    .resize-handle.sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+    .resize-handle.w { left: -6px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+    .snap-guide {
+      position: absolute;
+      z-index: 40;
+      pointer-events: none;
+      background: #1e90ff;
+      box-shadow: 0 0 0 1px rgba(30, 144, 255, .18);
+    }
+    .snap-guide.vertical {
+      top: 0;
+      bottom: 0;
+      width: 2px;
+    }
+    .snap-guide.horizontal {
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+    .preview-el span {
+      display: block;
+      color: #64748b;
+      font-size: 8px;
+      font-weight: 800;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+    .preview-el strong {
+      display: block;
+      overflow-wrap: anywhere;
+      line-height: 1.05;
+    }
+    .preview-barcode {
+      display: grid;
+      gap: 2px;
+      align-content: center;
+      justify-items: stretch;
+      text-align: center;
+    }
+    .preview-bars {
+      height: 24px;
+      background: repeating-linear-gradient(90deg, #000 0 2px, #fff 2px 4px, #000 4px 5px, #fff 5px 8px);
+      border-inline: 8px solid #fff;
+    }
+    .preview-qr {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      place-items: center;
+      text-align: center;
+    }
+    .preview-qr::after {
+      content: "QR";
+      display: grid;
+      place-items: center;
+      width: min(100%, 100px);
+      height: min(100%, 100px);
+      aspect-ratio: 1;
+      border: 2px solid #111827;
+      font-weight: 900;
+    }
+    .preview-table {
+      padding: 0;
+    }
+    .preview-table-clip {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    .preview-table table {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .preview-table td, .preview-table th {
+      padding: 2px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 8px;
+      max-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .hidden { display: none; }
     @media (max-width: 860px) {
       header { padding-inline: 18px; }
       .mapping { grid-template-columns: 1fr; }
       .compact-grid, .result-grid { grid-template-columns: 1fr; }
+      .designer-shell { grid-template-columns: 1fr; }
       .manual-entry { grid-template-columns: 1fr; }
       .theme-dock {
         width: 100%;
@@ -3387,6 +4470,7 @@ HTML = r"""
       <button class="tab active" id="christyTab">Christy / Spreadsheet Upload</button>
       <button class="tab" id="havnTab">Havn Email Paste</button>
       <button class="tab" id="bulkInboundTab">Onboarding</button>
+      <button class="tab" id="inboundLabelsTab">Carton Labels</button>
       <button class="tab" id="lightsourceTab">Lightsource</button>
       <button class="tab" id="outboundTab">Outbound Replacement</button>
       <div class="theme-dock" aria-label="Button color theme">
@@ -3502,6 +4586,72 @@ HTML = r"""
       </div>
     </div>
 
+    <div id="inboundLabelsApp" class="hidden">
+      <section>
+        <h2>Inbound 4x6 Carton Labels</h2>
+        <p class="helper">Upload an inbound pack list, PO, BOL, CSV, Excel file, or searchable PDF. Carton-numbered rows are grouped into single or mixed-SKU carton labels; rows without carton numbers expand from carton/case count.</p>
+        <label>Inbound document
+          <input id="labelDocuments" type="file" multiple accept=".xlsx,.xls,.xlsm,.csv,.pdf">
+        </label>
+        <label>Product variants for product names
+          <input id="labelProductVariants" type="file" accept=".csv,.xlsx,.xls,.xlsm">
+        </label>
+        <div class="row">
+          <button id="inboundLabelsGenerate">Generate 4x6 Labels</button>
+          <a class="download" href="/template/inbound-labels.csv">Download Label Template</a>
+          <span id="inboundLabelsStatus" class="subtle"></span>
+        </div>
+      </section>
+
+      <section id="inboundLabelsResultSection" class="hidden">
+        <h2>Label Result</h2>
+        <div id="inboundLabelsResult"></div>
+      </section>
+
+      <section>
+        <h2>Label Designer</h2>
+        <p class="helper">Build a reusable 4x6 layout from text, table, Code 128 barcode, and QR code blocks.</p>
+        <div class="designer-shell">
+          <div class="designer-controls">
+            <div class="row">
+              <label class="compact-control">Preset
+                <select id="labelPreset">
+                  <option value="blindReceive">Blind Receive</option>
+                  <option value="systemReceive">System Receive</option>
+                  <option value="inbound">Inbound Carton</option>
+                  <option value="lot">LOT Label</option>
+                  <option value="sku">SKU / Bin Label</option>
+                  <option value="blank">Blank</option>
+                </select>
+              </label>
+            </div>
+            <div class="row">
+              <button id="labelAddText" type="button">Add Text</button>
+              <button id="labelAddBarcode" type="button">Add Barcode</button>
+              <button id="labelAddTable" type="button">Add Table</button>
+              <button id="labelAddQr" type="button">Add QR</button>
+            </div>
+            <div id="labelElementList" class="designer-list"></div>
+            <div id="labelElementEditor" class="designer-editor subtle">Select an element to edit it.</div>
+          </div>
+          <div class="designer-preview-panel">
+            <div id="labelPreviewCanvas" class="label-preview-canvas"></div>
+          </div>
+        </div>
+        <div class="row">
+          <button id="labelDesignerGenerate" type="button">Generate Custom Labels</button>
+          <button id="labelSaveTemplate" class="tab" type="button">Save Template</button>
+          <button id="labelLoadTemplate" class="tab" type="button">Load Saved Template</button>
+          <span id="labelDesignerStatus" class="subtle"></span>
+        </div>
+      </section>
+
+      <section id="labelDesignerResultSection" class="hidden">
+        <h2>Custom Label Result</h2>
+        <div id="labelDesignerResult"></div>
+      </section>
+    </div>
+
     <div id="lightsourceApp" class="hidden">
       <section>
         <h2>Lightsource Email</h2>
@@ -3563,6 +4713,8 @@ HTML = r"""
     let currentMode = "";
     let havnRequests = [];
     let lightsourceRequests = [];
+    let labelDesignerElements = [];
+    let selectedLabelElementId = "";
 
     const statusEl = document.querySelector("#status");
     const filesEl = document.querySelector("#files");
@@ -3580,6 +4732,15 @@ HTML = r"""
     const bulkInboundStatusEl = document.querySelector("#bulkInboundStatus");
     const bulkInboundResultSection = document.querySelector("#bulkInboundResultSection");
     const bulkInboundResultEl = document.querySelector("#bulkInboundResult");
+    const inboundLabelsStatusEl = document.querySelector("#inboundLabelsStatus");
+    const inboundLabelsResultSection = document.querySelector("#inboundLabelsResultSection");
+    const inboundLabelsResultEl = document.querySelector("#inboundLabelsResult");
+    const labelDesignerStatusEl = document.querySelector("#labelDesignerStatus");
+    const labelDesignerResultSection = document.querySelector("#labelDesignerResultSection");
+    const labelDesignerResultEl = document.querySelector("#labelDesignerResult");
+    const labelElementListEl = document.querySelector("#labelElementList");
+    const labelElementEditorEl = document.querySelector("#labelElementEditor");
+    const labelPreviewCanvasEl = document.querySelector("#labelPreviewCanvas");
     const lightsourceStatusEl = document.querySelector("#lightsourceStatus");
     const lightsourceListEl = document.querySelector("#lightsourceList");
     const lightsourceResultSection = document.querySelector("#lightsourceResultSection");
@@ -3594,6 +4755,7 @@ HTML = r"""
     document.querySelector("#christyTab").addEventListener("click", () => setAppTab("christy"));
     document.querySelector("#havnTab").addEventListener("click", () => setAppTab("havn"));
     document.querySelector("#bulkInboundTab").addEventListener("click", () => setAppTab("bulkInbound"));
+    document.querySelector("#inboundLabelsTab").addEventListener("click", () => setAppTab("inboundLabels"));
     document.querySelector("#lightsourceTab").addEventListener("click", () => setAppTab("lightsource"));
     document.querySelector("#outboundTab").addEventListener("click", () => setAppTab("outbound"));
     document.querySelectorAll("[data-theme-choice]").forEach((button) => {
@@ -3616,13 +4778,18 @@ HTML = r"""
       document.querySelector("#christyApp").classList.toggle("hidden", tabName !== "christy");
       document.querySelector("#havnApp").classList.toggle("hidden", tabName !== "havn");
       document.querySelector("#bulkInboundApp").classList.toggle("hidden", tabName !== "bulkInbound");
+      document.querySelector("#inboundLabelsApp").classList.toggle("hidden", tabName !== "inboundLabels");
       document.querySelector("#lightsourceApp").classList.toggle("hidden", tabName !== "lightsource");
       document.querySelector("#outboundApp").classList.toggle("hidden", tabName !== "outbound");
       document.querySelector("#christyTab").classList.toggle("active", tabName === "christy");
       document.querySelector("#havnTab").classList.toggle("active", tabName === "havn");
       document.querySelector("#bulkInboundTab").classList.toggle("active", tabName === "bulkInbound");
+      document.querySelector("#inboundLabelsTab").classList.toggle("active", tabName === "inboundLabels");
       document.querySelector("#lightsourceTab").classList.toggle("active", tabName === "lightsource");
       document.querySelector("#outboundTab").classList.toggle("active", tabName === "outbound");
+      if (tabName === "inboundLabels") {
+        requestAnimationFrame(renderLabelPreview);
+      }
     }
 
     const buttonThemes = {
@@ -3892,6 +5059,69 @@ HTML = r"""
         bulkInboundStatusEl.textContent = "The server stopped responding while reading the customer documents.";
       } finally {
         document.querySelector("#bulkInboundGenerate").disabled = false;
+      }
+    });
+    document.querySelector("#inboundLabelsGenerate").addEventListener("click", async () => {
+      const documents = [...document.querySelector("#labelDocuments").files];
+      const productVariants = document.querySelector("#labelProductVariants").files[0];
+      inboundLabelsResultSection.classList.add("hidden");
+      if (!documents.length) {
+        inboundLabelsStatusEl.textContent = "Upload at least one inbound document first.";
+        return;
+      }
+      inboundLabelsStatusEl.textContent = "Building carton labels...";
+      document.querySelector("#inboundLabelsGenerate").disabled = true;
+      const form = new FormData();
+      documents.forEach(file => form.append("documents", file));
+      if (productVariants) {
+        form.append("product_variants", productVariants);
+      }
+      try {
+        const response = await fetch("/api/inbound-labels/generate", { method: "POST", body: form });
+        const data = await response.json();
+        if (!response.ok) {
+          inboundLabelsStatusEl.textContent = data.error || "Could not generate carton labels.";
+          return;
+        }
+        inboundLabelsStatusEl.textContent = `${data.label_count} 4x6 label${data.label_count === 1 ? "" : "s"} ready.`;
+        renderInboundLabelsResult(data);
+      } catch (error) {
+        inboundLabelsStatusEl.textContent = "The server stopped responding while building carton labels.";
+      } finally {
+        document.querySelector("#inboundLabelsGenerate").disabled = false;
+      }
+    });
+
+    document.querySelector("#labelDesignerGenerate").addEventListener("click", async () => {
+      const documents = [...document.querySelector("#labelDocuments").files];
+      const productVariants = document.querySelector("#labelProductVariants").files[0];
+      labelDesignerResultSection.classList.add("hidden");
+      if (!documents.length) {
+        labelDesignerStatusEl.textContent = "Upload at least one source document above.";
+        return;
+      }
+      labelDesignerStatusEl.textContent = "Generating custom labels...";
+      document.querySelector("#labelDesignerGenerate").disabled = true;
+      const form = new FormData();
+      documents.forEach(file => form.append("documents", file));
+      if (productVariants) form.append("product_variants", productVariants);
+      form.append("template", JSON.stringify({
+        preset: document.querySelector("#labelPreset").value,
+        elements: labelDesignerElements,
+      }));
+      try {
+        const response = await fetch("/api/label-designer/generate", { method: "POST", body: form });
+        const data = await response.json();
+        if (!response.ok) {
+          labelDesignerStatusEl.textContent = data.error || "Could not generate custom labels.";
+          return;
+        }
+        labelDesignerStatusEl.textContent = `${data.label_count} custom label${data.label_count === 1 ? "" : "s"} ready.`;
+        renderLabelDesignerResult(data);
+      } catch (error) {
+        labelDesignerStatusEl.textContent = "The server stopped responding while generating custom labels.";
+      } finally {
+        document.querySelector("#labelDesignerGenerate").disabled = false;
       }
     });
 
@@ -4327,6 +5557,488 @@ HTML = r"""
       bulkInboundResultSection.classList.remove("hidden");
     }
 
+    function renderInboundLabelsResult(data) {
+      const preview = data.preview || [];
+      inboundLabelsResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.label_count} printable 4x6 label${data.label_count === 1 ? "" : "s"} created.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}" target="_blank" rel="noreferrer">Open / Print Labels</a>
+            <a class="download" href="${data.report_url}">Download Review Report</a>
+          </div>
+          <div class="subtle">${data.single_count} single-SKU carton${data.single_count === 1 ? "" : "s"} and ${data.mixed_count} mixed-SKU carton${data.mixed_count === 1 ? "" : "s"}.</div>
+        </div>
+        ${preview.length ? `
+          <details style="margin-top: 18px;" open>
+            <summary><strong>Label Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+      `;
+      inboundLabelsResultSection.classList.remove("hidden");
+    }
+
+    const designerFields = [
+      ["b3_inbound", "B3 Inbound"],
+      ["company_name", "Company Name"],
+      ["company_id", "Company ID"],
+      ["shipment", "Inbound ID"],
+      ["carton", "Carton ID"],
+      ["tracking", "Tracking"],
+      ["po", "PO / Ref"],
+      ["vendor", "Vendor"],
+      ["carton_type", "Carton Type"],
+      ["inbound_type", "Inbound Type"],
+      ["carton_sequence", "Carton / Pallet Count"],
+      ["sku", "SKU"],
+      ["qty", "Qty"],
+      ["lot", "LOT ID"],
+      ["detail", "LOT ID / Detail"],
+      ["product_name", "Product Name"],
+    ];
+    const designerPresets = {
+      blindReceive: [
+        { type: "text", field: "b3_inbound", title: "", x: 0.3, y: 0.25, w: 5.4, h: 0.7, size: 32 },
+        { type: "text", field: "company_name", title: "Company Name", x: 0.3, y: 1.35, w: 5.4, h: 0.85, size: 30 },
+        { type: "text", field: "company_id", title: "Company ID", x: 0.3, y: 2.65, w: 5.4, h: 0.75, size: 30 },
+      ],
+      systemReceive: [
+        { type: "text", field: "b3_inbound", title: "", x: 0.18, y: 0.12, w: 2.25, h: 0.45, size: 22 },
+        { type: "text", field: "inbound_type", title: "Inbound Type", x: 2.65, y: 0.12, w: 1.15, h: 0.45, size: 22 },
+        { type: "text", field: "company_name", title: "Company Name", x: 0.18, y: 0.7, w: 2.25, h: 0.45, size: 14 },
+        { type: "text", field: "company_id", title: "Company ID", x: 2.48, y: 0.7, w: 1.34, h: 0.45, size: 12 },
+        { type: "text", field: "shipment", title: "Inbound Shipment ID", x: 0.18, y: 1.28, w: 3.64, h: 0.42, size: 17 },
+        { type: "barcode", field: "shipment", title: "Scan Inbound Shipment ID", x: 0.25, y: 1.82, w: 3.5, h: 0.72, size: 8 },
+        { type: "table", field: "sku", title: "SKU", x: 0.18, y: 2.78, w: 3.64, h: 2.15, size: 9 },
+        { type: "text", field: "carton_sequence", title: "Cartons / Pallets", x: 0.18, y: 5.25, w: 3.64, h: 0.42, size: 15 },
+      ],
+      inbound: [
+        { type: "text", field: "carton_type", title: "Label Type", x: 0.18, y: 0.15, w: 2.0, h: 0.32, size: 18 },
+        { type: "text", field: "carton", title: "Carton", x: 2.55, y: 0.16, w: 1.25, h: 0.3, size: 12 },
+        { type: "text", field: "shipment", title: "Inbound ID", x: 0.18, y: 0.62, w: 3.64, h: 0.34, size: 16 },
+        { type: "barcode", field: "shipment", title: "Scan Inbound ID", x: 0.25, y: 1.02, w: 3.5, h: 0.64, size: 8 },
+        { type: "table", field: "sku", title: "Items", x: 0.18, y: 1.82, w: 3.64, h: 2.1, size: 8 },
+        { type: "barcode", field: "lot", fallback: "detail", title: "Scan LOT ID", x: 0.25, y: 4.18, w: 3.5, h: 0.64, size: 8 },
+        { type: "text", field: "po", title: "PO / Ref", x: 0.18, y: 5.15, w: 1.75, h: 0.32, size: 9 },
+        { type: "text", field: "tracking", title: "Tracking", x: 2.0, y: 5.15, w: 1.82, h: 0.32, size: 9 },
+      ],
+      lot: [
+        { type: "text", field: "lot", fallback: "detail", title: "LOT ID", x: 0.22, y: 0.28, w: 3.55, h: 0.85, size: 22 },
+        { type: "barcode", field: "lot", fallback: "detail", title: "Scan LOT ID", x: 0.28, y: 1.32, w: 3.45, h: 0.8, size: 8 },
+        { type: "text", field: "sku", title: "SKU", x: 0.25, y: 2.45, w: 2.4, h: 0.45, size: 16 },
+        { type: "text", field: "qty", title: "Qty", x: 2.75, y: 2.45, w: 0.75, h: 0.45, size: 16 },
+        { type: "text", field: "shipment", title: "Inbound ID", x: 0.25, y: 3.25, w: 3.4, h: 0.36, size: 11 },
+      ],
+      sku: [
+        { type: "text", field: "sku", title: "SKU", x: 0.2, y: 0.35, w: 3.6, h: 0.75, size: 24 },
+        { type: "barcode", field: "sku", title: "Scan SKU", x: 0.25, y: 1.35, w: 3.5, h: 0.85, size: 8 },
+        { type: "text", field: "product_name", fallback: "detail", title: "Detail", x: 0.25, y: 2.55, w: 3.5, h: 0.7, size: 12 },
+      ],
+      blank: [],
+    };
+    const designerSample = {
+      b3_inbound: "B3 Inbound",
+      company_name: "Sample Company",
+      company_id: "WINIT-12345",
+      shipment: "INB-1001",
+      carton: "C001",
+      tracking: "1Z999999999",
+      po: "PO-12345",
+      vendor: "Sample Brand",
+      carton_type: "Mixed SKU",
+      inbound_type: "B",
+      carton_sequence: "1 of 10 cartons/pallets",
+      sku: "SKU-RED-S",
+      qty: "6",
+      lot: "2026060512345678901234567890",
+      detail: "2026060512345678901234567890",
+      product_name: "Red Shirt Small",
+    };
+
+    function initLabelDesigner() {
+      labelDesignerElements = cloneDesignerElements(designerPresets.blindReceive);
+      selectedLabelElementId = labelDesignerElements[0]?.id || "";
+      document.querySelector("#labelPreset").addEventListener("change", () => {
+        const preset = document.querySelector("#labelPreset").value;
+        labelDesignerElements = cloneDesignerElements(designerPresets[preset] || []);
+        selectedLabelElementId = labelDesignerElements[0]?.id || "";
+        renderLabelDesigner();
+      });
+      document.querySelector("#labelAddText").addEventListener("click", () => addDesignerElement("text"));
+      document.querySelector("#labelAddBarcode").addEventListener("click", () => addDesignerElement("barcode"));
+      document.querySelector("#labelAddTable").addEventListener("click", () => addDesignerElement("table"));
+      document.querySelector("#labelAddQr").addEventListener("click", () => addDesignerElement("qr"));
+      document.querySelector("#labelSaveTemplate").addEventListener("click", () => {
+        localStorage.setItem("returnsLabelDesignerTemplate", JSON.stringify({ elements: labelDesignerElements }));
+        labelDesignerStatusEl.textContent = "Template saved in this browser.";
+      });
+      document.querySelector("#labelLoadTemplate").addEventListener("click", () => {
+        try {
+          const saved = JSON.parse(localStorage.getItem("returnsLabelDesignerTemplate") || "{}");
+          if (!Array.isArray(saved.elements)) throw new Error("No saved template");
+          labelDesignerElements = cloneDesignerElements(saved.elements);
+          selectedLabelElementId = labelDesignerElements[0]?.id || "";
+          renderLabelDesigner();
+          labelDesignerStatusEl.textContent = "Saved template loaded.";
+        } catch (error) {
+          labelDesignerStatusEl.textContent = "No saved template found.";
+        }
+      });
+      renderLabelDesigner();
+    }
+
+    function cloneDesignerElements(elements) {
+      return elements.map(element => ({ ...element, id: element.id || `el-${Math.random().toString(16).slice(2)}` }));
+    }
+
+    function addDesignerElement(type) {
+      const element = { id: `el-${Date.now()}`, type, field: type === "table" ? "sku" : "shipment", title: type === "table" ? "Items" : "Field", x: 0.35, y: 0.35, w: type === "table" ? 3.0 : type === "qr" ? 1.35 : 1.8, h: type === "table" ? 1.2 : type === "qr" ? 1.55 : 0.45, size: 10 };
+      if (type === "barcode") element.title = "Scan Field";
+      if (type === "qr") element.title = "QR Payload";
+      labelDesignerElements.push(element);
+      selectedLabelElementId = element.id;
+      renderLabelDesigner();
+    }
+
+    function renderLabelDesigner() {
+      renderLabelElementList();
+      renderLabelElementEditor();
+      renderLabelPreview();
+    }
+
+    function renderLabelElementList() {
+      if (!labelDesignerElements.length) {
+        labelElementListEl.innerHTML = '<div class="subtle">No elements yet.</div>';
+        return;
+      }
+      labelElementListEl.innerHTML = labelDesignerElements.map((element, index) => `
+        <div class="designer-item ${element.id === selectedLabelElementId ? "active" : ""}" data-label-element="${element.id}">
+          <strong>${index + 1}. ${escapeHtml(element.title || element.type)} <span class="subtle">${escapeHtml(element.type)} / ${escapeHtml(element.field || "")}</span></strong>
+          <button class="danger" type="button" data-remove-label-element="${element.id}">Remove</button>
+        </div>
+      `).join("");
+      labelElementListEl.querySelectorAll("[data-label-element]").forEach(node => {
+        node.addEventListener("click", event => {
+          if (event.target.closest("[data-remove-label-element]")) return;
+          selectedLabelElementId = node.dataset.labelElement;
+          renderLabelDesigner();
+        });
+      });
+      labelElementListEl.querySelectorAll("[data-remove-label-element]").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          labelDesignerElements = labelDesignerElements.filter(element => element.id !== button.dataset.removeLabelElement);
+          selectedLabelElementId = labelDesignerElements[0]?.id || "";
+          renderLabelDesigner();
+        });
+      });
+    }
+
+    function renderLabelElementEditor() {
+      const element = labelDesignerElements.find(candidate => candidate.id === selectedLabelElementId);
+      if (!element) {
+        labelElementEditorEl.className = "designer-editor subtle";
+        labelElementEditorEl.innerHTML = "Select an element to edit it.";
+        return;
+      }
+      const fieldOptions = designerFields.map(([value, label]) => `<option value="${value}" ${element.field === value ? "selected" : ""}>${label}</option>`).join("");
+      const fallbackOptions = ['<option value="">None</option>', ...designerFields.map(([value, label]) => `<option value="${value}" ${element.fallback === value ? "selected" : ""}>${label}</option>`)].join("");
+      labelElementEditorEl.className = "designer-editor";
+      labelElementEditorEl.innerHTML = `
+        <label>Type<select data-edit-designer="type"><option value="text">Text</option><option value="barcode">Code 128 Barcode</option><option value="table">Item Table</option><option value="qr">QR Code</option></select></label>
+        <label>Field<select data-edit-designer="field">${fieldOptions}</select></label>
+        <label>Fallback<select data-edit-designer="fallback">${fallbackOptions}</select></label>
+        <label>Title<input data-edit-designer="title" value="${escapeHtml(element.title || "")}"></label>
+        <label>X<input type="number" step="0.05" data-edit-designer="x" value="${element.x}"></label>
+        <label>Y<input type="number" step="0.05" data-edit-designer="y" value="${element.y}"></label>
+        <label>Width<input type="number" step="0.05" data-edit-designer="w" value="${element.w}"></label>
+        <label>Height<input type="number" step="0.05" data-edit-designer="h" value="${element.h}"></label>
+        <label>Font Size<input type="number" step="1" data-edit-designer="size" value="${element.size || 10}"></label>
+      `;
+      labelElementEditorEl.querySelector('[data-edit-designer="type"]').value = element.type || "text";
+      labelElementEditorEl.querySelectorAll("[data-edit-designer]").forEach(input => {
+        input.addEventListener("input", () => updateDesignerElement(input));
+        input.addEventListener("change", () => updateDesignerElement(input));
+      });
+    }
+
+    function updateDesignerElement(input) {
+      const element = labelDesignerElements.find(candidate => candidate.id === selectedLabelElementId);
+      if (!element) return;
+      const key = input.dataset.editDesigner;
+      const numeric = new Set(["x", "y", "w", "h", "size"]);
+      element[key] = numeric.has(key) ? Number(input.value || 0) : input.value;
+      renderLabelElementList();
+      renderLabelPreview();
+    }
+
+    function sampleDesignerValue(element) {
+      return designerSample[element.field] || (element.fallback ? designerSample[element.fallback] : "") || "";
+    }
+
+    function designerPageSize() {
+      return document.querySelector("#labelPreset").value === "blindReceive"
+        ? { width: 6, height: 4 }
+        : { width: 4, height: 6 };
+    }
+
+    function renderLabelPreview() {
+      const page = designerPageSize();
+      labelPreviewCanvasEl.classList.toggle("landscape", page.width > page.height);
+      const canvasWidth = labelPreviewCanvasEl.clientWidth || 384;
+      const canvasHeight = labelPreviewCanvasEl.clientHeight || 576;
+      const scaleX = canvasWidth / page.width;
+      const scaleY = canvasHeight / page.height;
+      labelPreviewCanvasEl.innerHTML = labelDesignerElements.map(element => {
+        const left = Number(element.x || 0) * scaleX;
+        const top = Number(element.y || 0) * scaleY;
+        const width = Number(element.w || 1) * scaleX;
+        const height = Number(element.h || .4) * scaleY;
+        const style = `left:${left}px;top:${top}px;width:${width}px;height:${height}px;font-size:${Math.max(8, Number(element.size || 10))}px;`;
+        const active = element.id === selectedLabelElementId ? "active" : "";
+        const controls = active ? `<button class="preview-delete" type="button" data-delete-preview-element="${element.id}" aria-label="Remove element">x</button>${["nw","n","ne","e","se","s","sw","w"].map(handle => `<span class="resize-handle ${handle}" data-resize-handle="${handle}"></span>`).join("")}` : "";
+        const title = escapeHtml(Object.prototype.hasOwnProperty.call(element, "title") ? element.title : element.type);
+        const value = escapeHtml(sampleDesignerValue(element));
+        if (element.type === "barcode") {
+          return `<div class="preview-el preview-barcode ${active}" data-preview-element="${element.id}" style="${style}">${controls}<span>${title}</span><div class="preview-bars"></div><strong>${value}</strong></div>`;
+        }
+        if (element.type === "table") {
+          return `<div class="preview-el preview-table ${active}" data-preview-element="${element.id}" style="${style}">${controls}<div class="preview-table-clip"><table><thead><tr><th>SKU x Qty</th></tr></thead><tbody><tr><td>SKU-RED-S x 6</td></tr><tr><td>SKU-BLUE-M x 4</td></tr></tbody></table></div></div>`;
+        }
+        if (element.type === "qr") {
+          return `<div class="preview-el preview-qr ${active}" data-preview-element="${element.id}" style="${style}">${controls}<span>${title}</span><strong>${value}</strong></div>`;
+        }
+        return `<div class="preview-el ${active}" data-preview-element="${element.id}" style="${style}">${controls}<span>${title}</span><strong>${value}</strong></div>`;
+      }).join("");
+      labelPreviewCanvasEl.querySelectorAll("[data-delete-preview-element]").forEach(button => {
+        button.addEventListener("pointerdown", event => {
+          event.preventDefault();
+          event.stopPropagation();
+        });
+        button.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          labelDesignerElements = labelDesignerElements.filter(element => element.id !== button.dataset.deletePreviewElement);
+          selectedLabelElementId = labelDesignerElements[0]?.id || "";
+          renderLabelDesigner();
+        });
+      });
+      labelPreviewCanvasEl.querySelectorAll("[data-preview-element]").forEach(node => {
+        node.addEventListener("click", () => {
+          selectedLabelElementId = node.dataset.previewElement;
+          renderLabelDesigner();
+        });
+        node.addEventListener("pointerdown", event => startDesignerDrag(event, node));
+      });
+    }
+
+    function startDesignerDrag(event, node) {
+      const element = labelDesignerElements.find(candidate => candidate.id === node.dataset.previewElement);
+      if (!element) return;
+      event.preventDefault();
+      event.stopPropagation();
+      selectedLabelElementId = element.id;
+      const rect = labelPreviewCanvasEl.getBoundingClientRect();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const originX = Number(element.x || 0);
+      const originY = Number(element.y || 0);
+      const originW = Number(element.w || 1);
+      const originH = Number(element.h || .4);
+      const handle = event.target.dataset.resizeHandle || "";
+      const page = designerPageSize();
+      const scaleX = rect.width / page.width;
+      const scaleY = rect.height / page.height;
+      node.setPointerCapture?.(event.pointerId);
+
+      function onMove(moveEvent) {
+        const dx = (moveEvent.clientX - startX) / scaleX;
+        const dy = (moveEvent.clientY - startY) / scaleY;
+        let guides = [];
+        if (handle) {
+          const resized = resizeDesignerElement(element, handle, originX, originY, originW, originH, dx, dy);
+          element.x = resized.x;
+          element.y = resized.y;
+          element.w = resized.w;
+          element.h = resized.h;
+          guides = resized.guides;
+        } else {
+          const maxX = Math.max(0, page.width - Number(element.w || 1));
+          const maxY = Math.max(0, page.height - Number(element.h || .4));
+          const snapped = snapDesignerPosition(element, originX + dx, originY + dy, maxX, maxY);
+          element.x = snapped.x;
+          element.y = snapped.y;
+          guides = snapped.guides;
+        }
+        renderLabelPreview();
+        renderSnapGuides(guides);
+        renderLabelElementList();
+        renderLabelElementEditor();
+      }
+
+      function onUp(upEvent) {
+        node.releasePointerCapture?.(upEvent.pointerId);
+        clearSnapGuides();
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      }
+
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp, { once: true });
+    }
+
+    function resizeDesignerElement(element, handle, originX, originY, originW, originH, dx, dy) {
+      const page = designerPageSize();
+      const minW = 0.25;
+      const minH = 0.2;
+      let x = originX;
+      let y = originY;
+      let w = originW;
+      let h = originH;
+      if (handle.includes("e")) w = originW + dx;
+      if (handle.includes("s")) h = originH + dy;
+      if (handle.includes("w")) {
+        x = originX + dx;
+        w = originW - dx;
+      }
+      if (handle.includes("n")) {
+        y = originY + dy;
+        h = originH - dy;
+      }
+      if (w < minW) {
+        if (handle.includes("w")) x -= minW - w;
+        w = minW;
+      }
+      if (h < minH) {
+        if (handle.includes("n")) y -= minH - h;
+        h = minH;
+      }
+      x = Math.max(0, Math.min(page.width - minW, x));
+      y = Math.max(0, Math.min(page.height - minH, y));
+      w = Math.max(minW, Math.min(page.width - x, w));
+      h = Math.max(minH, Math.min(page.height - y, h));
+      const grid = 0.05;
+      x = Math.round(x / grid) * grid;
+      y = Math.round(y / grid) * grid;
+      w = Math.round(w / grid) * grid;
+      h = Math.round(h / grid) * grid;
+      const probe = { ...element, x, y, w, h };
+      const snapped = snapDesignerPosition(probe, x, y, Math.max(0, page.width - w), Math.max(0, page.height - h));
+      return {
+        x: snapped.x,
+        y: snapped.y,
+        w: Number(w.toFixed(2)),
+        h: Number(h.toFixed(2)),
+        guides: snapped.guides,
+      };
+    }
+
+    function snapDesignerPosition(element, rawX, rawY, maxX, maxY) {
+      const page = designerPageSize();
+      const grid = 0.05;
+      const threshold = 0.04;
+      const width = Number(element.w || 1);
+      const height = Number(element.h || .4);
+      let x = Math.round(rawX / grid) * grid;
+      let y = Math.round(rawY / grid) * grid;
+      const guides = [];
+      const xTargets = [
+        { value: 0, kind: "vertical" },
+        { value: page.width / 2, kind: "vertical" },
+        { value: page.width, kind: "vertical" },
+      ];
+      const yTargets = [
+        { value: 0, kind: "horizontal" },
+        { value: page.height / 2, kind: "horizontal" },
+        { value: page.height, kind: "horizontal" },
+      ];
+      labelDesignerElements.forEach(other => {
+        if (other.id === element.id) return;
+        const ox = Number(other.x || 0);
+        const oy = Number(other.y || 0);
+        const ow = Number(other.w || 1);
+        const oh = Number(other.h || .4);
+        xTargets.push({ value: ox, kind: "vertical" }, { value: ox + ow / 2, kind: "vertical" }, { value: ox + ow, kind: "vertical" });
+        yTargets.push({ value: oy, kind: "horizontal" }, { value: oy + oh / 2, kind: "horizontal" }, { value: oy + oh, kind: "horizontal" });
+      });
+      const xPoints = [
+        { value: x, offset: 0 },
+        { value: x + width / 2, offset: width / 2 },
+        { value: x + width, offset: width },
+      ];
+      const yPoints = [
+        { value: y, offset: 0 },
+        { value: y + height / 2, offset: height / 2 },
+        { value: y + height, offset: height },
+      ];
+      for (const point of xPoints) {
+        const target = xTargets.find(candidate => Math.abs(candidate.value - point.value) <= threshold);
+        if (target) {
+          x = target.value - point.offset;
+          guides.push(target);
+          break;
+        }
+      }
+      for (const point of yPoints) {
+        const target = yTargets.find(candidate => Math.abs(candidate.value - point.value) <= threshold);
+        if (target) {
+          y = target.value - point.offset;
+          guides.push(target);
+          break;
+        }
+      }
+      return {
+        x: Math.max(0, Math.min(maxX, Number(x.toFixed(2)))),
+        y: Math.max(0, Math.min(maxY, Number(y.toFixed(2)))),
+        guides,
+      };
+    }
+
+    function renderSnapGuides(guides) {
+      clearSnapGuides();
+      const page = designerPageSize();
+      const scaleX = (labelPreviewCanvasEl.clientWidth || 384) / page.width;
+      const scaleY = (labelPreviewCanvasEl.clientHeight || 576) / page.height;
+      guides.forEach(guide => {
+        const node = document.createElement("div");
+        node.className = `snap-guide ${guide.kind}`;
+        if (guide.kind === "vertical") {
+          node.style.left = `${guide.value * scaleX}px`;
+        } else {
+          node.style.top = `${guide.value * scaleY}px`;
+        }
+        labelPreviewCanvasEl.appendChild(node);
+      });
+    }
+
+    function clearSnapGuides() {
+      labelPreviewCanvasEl.querySelectorAll(".snap-guide").forEach(node => node.remove());
+    }
+
+    function renderLabelDesignerResult(data) {
+      const preview = data.preview || [];
+      labelDesignerResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.label_count} custom label${data.label_count === 1 ? "" : "s"} created.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}" target="_blank" rel="noreferrer">Open / Print Custom Labels</a>
+            <a class="download" href="${data.report_url}">Download Review Report</a>
+          </div>
+        </div>
+        ${preview.length ? `
+          <details style="margin-top: 18px;" open>
+            <summary><strong>Custom Label Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+      `;
+      labelDesignerResultSection.classList.remove("hidden");
+    }
+
     function renderProductVariantsResult(data) {
       const preview = data.preview || [];
       const reportPreview = data.report_preview || [];
@@ -4556,6 +6268,8 @@ HTML = r"""
         "'": "&#039;",
       }[char]));
     }
+
+    initLabelDesigner();
   </script>
 </body>
 </html>
