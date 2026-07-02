@@ -24,6 +24,8 @@ import urllib.request
 
 import pandas as pd
 
+from christy_reconciliation import build_christy_invoice_reconciliation
+
 
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
@@ -31,7 +33,7 @@ OUTPUT_DIR = BASE_DIR / "outputs"
 UPLOAD_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-APP_VERSION = "1.8"
+APP_VERSION = "1.9"
 GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/guevaraj1985/returns-shipment-builder/releases/latest"
 
 CODE128_PATTERNS = [
@@ -3314,6 +3316,9 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": True, "message": "Application is closing."})
             threading.Thread(target=self.server.shutdown, daemon=True).start()
             return
+        if self.path == "/api/christy/reconcile":
+            self.handle_christy_reconciliation()
+            return
         if self.path == "/api/analyze":
             self.handle_analyze()
             return
@@ -3348,6 +3353,50 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             self.handle_outbound_generate()
             return
         self.send_json({"error": "Not found."}, HTTPStatus.NOT_FOUND)
+
+    def handle_christy_reconciliation(self) -> None:
+        try:
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            processed_field = form["processed_orders"] if "processed_orders" in form else None
+            invoice_field = form["invoice_export"] if "invoice_export" in form else None
+            if isinstance(processed_field, list):
+                processed_field = processed_field[0] if processed_field else None
+            if isinstance(invoice_field, list):
+                invoice_field = invoice_field[0] if invoice_field else None
+            if processed_field is None or not getattr(processed_field, "filename", None):
+                self.send_json({"error": "Upload the Processed Orders CSV."}, HTTPStatus.BAD_REQUEST)
+                return
+            if invoice_field is None or not getattr(invoice_field, "filename", None):
+                self.send_json({"error": "Upload the Invoice Export CSV."}, HTTPStatus.BAD_REQUEST)
+                return
+            start_date = cell_text(form.getfirst("start_date", ""))
+            end_date = cell_text(form.getfirst("end_date", ""))
+            if not start_date or not end_date:
+                self.send_json({"error": "Select a start date and end date."}, HTTPStatus.BAD_REQUEST)
+                return
+            processed_field.file.seek(0)
+            invoice_field.file.seek(0)
+            result = build_christy_invoice_reconciliation(
+                Path(processed_field.filename).name,
+                processed_field.file.read(),
+                Path(invoice_field.filename).name,
+                invoice_field.file.read(),
+                OUTPUT_DIR,
+                start_date,
+                end_date,
+            )
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(result)
 
     def handle_analyze(self) -> None:
         try:
@@ -3853,6 +3902,16 @@ HTML = r"""
     .tool-panel input[type=file] {
       padding: 12px;
     }
+    .date-range-panel {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(180px, 240px));
+      gap: 12px;
+      margin-top: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #f8fbff;
+    }
     .helper {
       margin: 0;
       color: var(--muted);
@@ -3960,6 +4019,26 @@ HTML = r"""
       background: rgba(247, 249, 252, 0.94);
       box-shadow: 0 8px 20px rgba(16, 35, 63, 0.04);
       backdrop-filter: blur(8px);
+    }
+    .task-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-right: 10px;
+      border-right: 1px solid var(--line);
+    }
+    .task-group-label {
+      padding: 0 4px;
+      color: var(--muted);
+      font-family: var(--font-eyebrow);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .task-group .tab {
+      min-width: 0;
     }
     .tab {
       min-width: 112px;
@@ -4467,12 +4546,22 @@ HTML = r"""
   </header>
   <main>
     <div class="tabs">
-      <button class="tab active" id="christyTab">Christy / Spreadsheet Upload</button>
-      <button class="tab" id="havnTab">Havn Email Paste</button>
-      <button class="tab" id="bulkInboundTab">Onboarding</button>
-      <button class="tab" id="inboundLabelsTab">Carton Labels</button>
-      <button class="tab" id="lightsourceTab">Lightsource</button>
-      <button class="tab" id="outboundTab">Outbound Replacement</button>
+      <div class="task-group" aria-label="Christy tasks">
+        <span class="task-group-label">Christy</span>
+        <button class="tab active" id="christyTab">Returns CSV</button>
+        <button class="tab" id="christyReconciliationTab">WH Invoice</button>
+      </div>
+      <div class="task-group" aria-label="Returns tasks">
+        <span class="task-group-label">Returns</span>
+        <button class="tab" id="havnTab">Havn</button>
+        <button class="tab" id="lightsourceTab">Lightsource</button>
+        <button class="tab" id="outboundTab">Replacement</button>
+      </div>
+      <div class="task-group" aria-label="Warehouse tasks">
+        <span class="task-group-label">Warehouse</span>
+        <button class="tab" id="bulkInboundTab">Onboarding</button>
+        <button class="tab" id="inboundLabelsTab">Carton Labels</button>
+      </div>
       <div class="theme-dock" aria-label="Button color theme">
         <span class="theme-dock-label">Buttons</span>
         <button class="theme-choice active" type="button" data-theme-choice="default" title="Default black buttons" aria-label="Default black buttons"><span class="theme-swatch" style="--swatch:#050505"></span></button>
@@ -4507,6 +4596,40 @@ HTML = r"""
       <h2>Result</h2>
       <div id="result"></div>
     </section>
+    </div>
+
+    <div id="christyReconciliationApp" class="hidden">
+      <section>
+        <h2>Christy WH Invoice Reconciliation</h2>
+        <div class="compact-grid">
+          <div class="tool-panel">
+            <label>Processed Orders CSV
+              <input id="christyProcessedOrders" type="file" accept=".csv">
+            </label>
+          </div>
+          <div class="tool-panel">
+            <label>Invoice Export CSV
+              <input id="christyInvoiceExport" type="file" accept=".csv">
+            </label>
+          </div>
+        </div>
+        <div class="date-range-panel" aria-label="Reconciliation date range">
+          <label>Start Date
+            <input id="christyReconciliationStartDate" class="list-input" type="date">
+          </label>
+          <label>End Date
+            <input id="christyReconciliationEndDate" class="list-input" type="date">
+          </label>
+        </div>
+        <div class="row">
+          <button id="christyReconcile" type="button">Generate Reconciliation Report</button>
+          <span id="christyReconciliationStatus" class="subtle"></span>
+        </div>
+      </section>
+      <section id="christyReconciliationResultSection" class="hidden">
+        <h2>Reconciliation Result</h2>
+        <div id="christyReconciliationResult"></div>
+      </section>
     </div>
 
     <div id="havnApp" class="hidden">
@@ -4722,6 +4845,9 @@ HTML = r"""
     const mappingSection = document.querySelector("#mappingSection");
     const resultSection = document.querySelector("#resultSection");
     const resultEl = document.querySelector("#result");
+    const christyReconciliationStatusEl = document.querySelector("#christyReconciliationStatus");
+    const christyReconciliationResultSection = document.querySelector("#christyReconciliationResultSection");
+    const christyReconciliationResultEl = document.querySelector("#christyReconciliationResult");
     const havnStatusEl = document.querySelector("#havnStatus");
     const havnListEl = document.querySelector("#havnList");
     const havnResultSection = document.querySelector("#havnResultSection");
@@ -4751,8 +4877,10 @@ HTML = r"""
     const updateBannerEl = document.querySelector("#updateBanner");
 
     checkForUpdates();
+    setDefaultReconciliationDates();
 
     document.querySelector("#christyTab").addEventListener("click", () => setAppTab("christy"));
+    document.querySelector("#christyReconciliationTab").addEventListener("click", () => setAppTab("christyReconciliation"));
     document.querySelector("#havnTab").addEventListener("click", () => setAppTab("havn"));
     document.querySelector("#bulkInboundTab").addEventListener("click", () => setAppTab("bulkInbound"));
     document.querySelector("#inboundLabelsTab").addEventListener("click", () => setAppTab("inboundLabels"));
@@ -4776,12 +4904,14 @@ HTML = r"""
 
     function setAppTab(tabName) {
       document.querySelector("#christyApp").classList.toggle("hidden", tabName !== "christy");
+      document.querySelector("#christyReconciliationApp").classList.toggle("hidden", tabName !== "christyReconciliation");
       document.querySelector("#havnApp").classList.toggle("hidden", tabName !== "havn");
       document.querySelector("#bulkInboundApp").classList.toggle("hidden", tabName !== "bulkInbound");
       document.querySelector("#inboundLabelsApp").classList.toggle("hidden", tabName !== "inboundLabels");
       document.querySelector("#lightsourceApp").classList.toggle("hidden", tabName !== "lightsource");
       document.querySelector("#outboundApp").classList.toggle("hidden", tabName !== "outbound");
       document.querySelector("#christyTab").classList.toggle("active", tabName === "christy");
+      document.querySelector("#christyReconciliationTab").classList.toggle("active", tabName === "christyReconciliation");
       document.querySelector("#havnTab").classList.toggle("active", tabName === "havn");
       document.querySelector("#bulkInboundTab").classList.toggle("active", tabName === "bulkInbound");
       document.querySelector("#inboundLabelsTab").classList.toggle("active", tabName === "inboundLabels");
@@ -4823,6 +4953,21 @@ HTML = r"""
     }
 
     applyButtonTheme(localStorage.getItem("returnsButtonTheme") || "default", false);
+
+    function formatLocalDate(dateValue) {
+      const year = dateValue.getFullYear();
+      const month = String(dateValue.getMonth() + 1).padStart(2, "0");
+      const day = String(dateValue.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function setDefaultReconciliationDates() {
+      const today = new Date();
+      const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+      document.querySelector("#christyReconciliationStartDate").value = formatLocalDate(previousMonthStart);
+      document.querySelector("#christyReconciliationEndDate").value = formatLocalDate(previousMonthEnd);
+    }
 
     async function checkForUpdates() {
       try {
@@ -4901,6 +5046,47 @@ HTML = r"""
         statusEl.textContent = "The server stopped responding while creating the CSV. Refresh and try again.";
       } finally {
         document.querySelector("#export").disabled = false;
+      }
+    });
+
+    document.querySelector("#christyReconcile").addEventListener("click", async () => {
+      const processedFile = document.querySelector("#christyProcessedOrders").files[0];
+      const invoiceFile = document.querySelector("#christyInvoiceExport").files[0];
+      const startDate = document.querySelector("#christyReconciliationStartDate").value;
+      const endDate = document.querySelector("#christyReconciliationEndDate").value;
+      christyReconciliationResultSection.classList.add("hidden");
+      if (!processedFile || !invoiceFile) {
+        christyReconciliationStatusEl.textContent = "Upload both the Processed Orders CSV and Invoice Export CSV.";
+        return;
+      }
+      if (!startDate || !endDate) {
+        christyReconciliationStatusEl.textContent = "Select a start date and end date.";
+        return;
+      }
+      if (startDate > endDate) {
+        christyReconciliationStatusEl.textContent = "Start date must be on or before end date.";
+        return;
+      }
+      christyReconciliationStatusEl.textContent = `Reconciling ${startDate} through ${endDate}...`;
+      document.querySelector("#christyReconcile").disabled = true;
+      const form = new FormData();
+      form.append("processed_orders", processedFile);
+      form.append("invoice_export", invoiceFile);
+      form.append("start_date", startDate);
+      form.append("end_date", endDate);
+      try {
+        const response = await fetch("/api/christy/reconcile", { method: "POST", body: form });
+        const data = await response.json();
+        if (!response.ok) {
+          christyReconciliationStatusEl.textContent = data.error || "Could not reconcile the exports.";
+          return;
+        }
+        christyReconciliationStatusEl.textContent = "Reconciliation workbook is ready.";
+        renderChristyReconciliationResult(data);
+      } catch (error) {
+        christyReconciliationStatusEl.textContent = "The server stopped responding while reconciling the exports.";
+      } finally {
+        document.querySelector("#christyReconcile").disabled = false;
       }
     });
 
@@ -5471,6 +5657,70 @@ HTML = r"""
       input.value = value;
       lightsourceResultSection.classList.add("hidden");
       lightsourceStatusEl.textContent = `Saved ${fieldLabel(field)} for ${item.sku}.`;
+    }
+
+    function renderChristyReconciliationResult(data) {
+      const counts = data.counts || {};
+      const matchedPreview = data.matched_preview || [];
+      const reviewPreview = data.review_preview || [];
+      const dateRange = data.date_range || {};
+      const feeSummary = data.invoice_fee_summary || {};
+      const naPackagingSummary = data.na_packaging_summary || {};
+      const boxPricingPreview = data.box_pricing_preview || [];
+      const money = value => `$${Number(value || 0).toFixed(2)}`;
+      const summaryRows = [
+        { "Category": "Selected Date Range", "Count": `${dateRange.start || ""} through ${dateRange.end || ""}`, "Action": "Processed Fulfillment Date (Order Date fallback) / Invoice Created" },
+        { "Category": "Fulfillment Costs", "Count": money(feeSummary.fulfillment_costs), "Action": "Type = fulfillment_fees" },
+        { "Category": "Packaging Fees", "Count": money(feeSummary.packaging_fees), "Action": "Type = supplies" },
+        { "Category": "Payment Service Fees", "Count": money(feeSummary.payment_service_fees), "Action": "Type = payment_service_fees" },
+        { "Category": "Mapped Invoice Total", "Count": money(feeSummary.mapped_total), "Action": "Fulfillment + packaging + payment service fees" },
+        { "Category": "Other Fees Excluded", "Count": money(feeSummary.other_fees), "Action": `${feeSummary.other_fee_rows || 0} return/other fee rows` },
+        { "Category": "N/A Packaging Fees", "Count": money(naPackagingSummary.packaging_fees), "Action": "Column AA plus invoice-mined dimension pricing" },
+        { "Category": "N/A Fulfillment + Packaging", "Count": money(naPackagingSummary.estimated_total), "Action": "Known-price orders; unresolved packaging is excluded" },
+        { "Category": "Packaging Inferred", "Count": naPackagingSummary.inferred || 0, "Action": "Priced from invoice dimension lookup" },
+        { "Category": "No Packaging Selected", "Count": naPackagingSummary.no_packaging_selected || 0, "Action": "Explicitly called out in processed orders" },
+        { "Category": "Missing Packaging Pricing", "Count": naPackagingSummary.missing_pricing || 0, "Action": "Review required" },
+        { "Category": "Box Dimensions Mined", "Count": naPackagingSummary.dimensions_mined || 0, "Action": "See Box Pricing workbook tab" },
+        { "Category": "Matched", "Count": counts.matched || 0, "Action": "Ready to invoice" },
+        { "Category": "Batch Mismatches", "Count": counts.batch_mismatches || 0, "Action": "Review batch number" },
+        { "Category": "Processed Unmatched", "Count": counts.processed_unmatched || 0, "Action": "Check missing invoice charge" },
+        { "Category": "N/A Batch", "Count": counts.na_batch || 0, "Action": "Check outside-platform label" },
+        { "Category": "Invoice Unmatched", "Count": counts.invoice_unmatched || 0, "Action": "Check processed order" },
+        { "Category": "Cancelled Ignored", "Count": counts.cancelled_ignored || 0, "Action": "No action" },
+        { "Category": "Processed Outside Range", "Count": counts.processed_date_excluded || 0, "Action": "Excluded" },
+        { "Category": "Invoice Outside Range", "Count": counts.invoice_date_excluded || 0, "Action": "Excluded" },
+      ];
+      christyReconciliationResultEl.innerHTML = `
+        <div class="success">
+          <strong>${counts.matched || 0} completed order/batch matches are ready for invoice verification.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}">Download Reconciliation Workbook</a>
+          </div>
+        </div>
+        <details class="preview-panel" open>
+          <summary><strong>Reconciliation Summary</strong></summary>
+          <div class="table-wrap">${simpleTable(summaryRows)}</div>
+        </details>
+        ${reviewPreview.length ? `
+          <details class="preview-panel" open>
+            <summary><strong>Review Preview</strong></summary>
+            <div class="table-wrap">${simpleTable(reviewPreview)}</div>
+          </details>
+        ` : ""}
+        ${boxPricingPreview.length ? `
+          <details class="preview-panel">
+            <summary><strong>Box Pricing Preview</strong></summary>
+            <div class="table-wrap">${simpleTable(boxPricingPreview)}</div>
+          </details>
+        ` : ""}
+        ${matchedPreview.length ? `
+          <details class="preview-panel">
+            <summary><strong>Matched Preview</strong></summary>
+            <div class="table-wrap">${simpleTable(matchedPreview)}</div>
+          </details>
+        ` : ""}
+      `;
+      christyReconciliationResultSection.classList.remove("hidden");
     }
 
     function renderHavnResult(data) {
