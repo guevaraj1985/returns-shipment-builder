@@ -313,6 +313,183 @@ PDF_TABLE_HEADER_WORDS = [
     "pallet",
 ]
 
+HAVN_ORDER_IMPORT_FIELDS = [
+    "Order Number",
+    "Order Date",
+    "Requested Service",
+    "Item SKU",
+    "Item Unit Price",
+    "Item Quantity",
+    "HS Code",
+    "Country Of Origin",
+    "Company Name",
+    "First Name",
+    "Last Name",
+    "Address Line 1",
+    "Address Line 2",
+    "City",
+    "State/Province",
+    "Zip/Postal Code",
+    "Country",
+    "Email",
+    "Phone",
+    "Notes",
+    "Signature Required",
+    "Package SKU",
+    "Package Type",
+    "Package Length",
+    "Package Width",
+    "Package Height",
+    "Declared Value",
+    "Package #",
+    "Origin Address Line 1",
+    "Origin Address Line 2",
+    "Origin City",
+    "Origin State/Province",
+    "Origin Zip/Postal Code",
+    "Origin Country",
+    "Origin Company",
+    "Origin Contact Name",
+    "Origin Phone",
+    "Origin Email",
+]
+
+SOAPBOX_ORDER_IMPORT_FIELDS = [
+    "Order Number",
+    "Order Date",
+    "Requested Service",
+    "Item SKU",
+    "Item Unit Price",
+    "Item Quantity",
+    "HS Code",
+    "Country Of Origin",
+    "Company Name",
+    "First Name",
+    "Last Name",
+    "Address Line 1",
+    "Address Line 2",
+    "City",
+    "State/Province",
+    "Zip/Postal Code",
+    "Country",
+    "Email",
+    "Phone",
+    "Notes",
+    "Signature Required",
+    "Package SKU",
+    "Package Type",
+    "Package Length",
+    "Package Width",
+    "Package Height",
+    "Declared Value",
+    "Package #",
+    "Origin Address Line 1",
+    "Origin Address Line 2",
+    "Origin City",
+    "Origin State/Province",
+    "Origin Zip/Postal Code",
+    "Origin Country",
+    "Origin Company",
+    "Origin Contact Name",
+    "Origin Phone",
+    "Origin Email",
+]
+
+OUTBOUND_ORDER_ALIASES = [
+    "Shopify Order#",
+    "Shopify Order #",
+    "Shopify Order",
+    "Shopify Order Number",
+    "Shipment # *",
+    "Shipment #",
+    "Shipment Number",
+    "Shipment",
+    "Order Number",
+    "Order #",
+    "Customer Order Number",
+    "Reference Order Number",
+]
+
+OUTBOUND_SKU_ALIASES = [
+    "SKUs",
+    "SKU",
+    "Item SKU",
+    "Product Variant SKU *",
+    "Product Variant SKU",
+    "Variant SKU",
+]
+
+OUTBOUND_QTY_ALIASES = [
+    "Qty",
+    "Quantity",
+    "Item Quantity",
+    "Units per Case *",
+    "Units per Case",
+    "Cases *",
+    "Cases",
+]
+
+HAVN_DESTINATION_FIELDS = {
+    "Company Name": "Basic 3PL RMA",
+    "First Name": "HAVN",
+    "Last Name": "RETURN",
+    "Address Line 1": "7050 New Buffington Road",
+    "Address Line 2": "#50872546",
+    "City": "Florence",
+    "State/Province": "KY",
+    "Zip/Postal Code": "41042",
+    "Country": "US",
+    "Email": "hello@havnwear.com",
+    "Phone": "14088285055",
+}
+
+HAVN_ORIGIN_DEFAULTS = {
+    "Origin Company": "Basic_3PL_RMA",
+    "Origin Phone": "14088285055",
+    "Origin Email": "hello@havnwear.com",
+}
+
+SKU_PACKAGE_DEFAULTS = {
+    "FD-PCAP-BLK-1": ("Box", "24", "16", "12"),
+    "FD-PJSET-HNVY-L": ("Box", "20", "14", "11"),
+    "FD-PJSET-HNVY-M": ("Box", "24", "16", "12"),
+    "FD-PJSET-HNVY-S": ("Box", "16", "12", "8"),
+    "FD-UCAP-BLK-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-CSMR-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-HGRY-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-LIVY-1": ("Box", "24", "16", "12"),
+    "FD-UCAP-NVY-1": ("Box", "12", "8", "6"),
+    "FD-UCAP-PUR-1": ("Box", "16", "12", "8"),
+    "FD-UJGR-BLK-M": ("Box", "24", "16", "12"),
+    "FD-UJGR-NVY-M": ("Box", "24", "16", "12"),
+    "FD-ULGHTBNE-BLK-1": ("Box", "8", "6", "4"),
+    "FD-ULGHTBNE-GRY-1": ("Box", "8", "6", "4"),
+    "FD-ULGHTBNE-WHT-1": ("Box", "12", "8", "6"),
+    "FD2-BLKT-BEI": ("Box", "12", "8", "6"),
+    "FD2-BLKT-BEI-LARG": ("Box", "16", "12", "9"),
+    "FD2-BLKT-BORD-LARG": ("Box", "16", "12", "8"),
+    "FD2-BLKT-GRY-LARG": ("Box", "20", "14", "11"),
+    "FD2-MBRF-BLK-M": ("Mailer", "16", "15", "0"),
+    "FD2-MBRF-BLK-S": ("Box", "12", "8", "6"),
+    "FD2-MBRF-BLK-XXL": ("Mailer", "14", "12", "0"),
+    "FD2-MTS-BLK-XL": ("Box", "12", "8", "6"),
+    "FD2-MTS-BLK-XXL": ("Mailer", "15", "12", "0"),
+    "FD2-MTS-ETH-M": ("Box", "24", "16", "12"),
+    "FD2-MTS-SPAP-M": ("Box", "24", "16", "12"),
+    "FD2-UBNE-BLK-1": ("Box", "12", "8", "6"),
+    "FD2-UBNE-NAV-1": ("Box", "12", "8", "6"),
+    "FD2-UBNE-WHT-1": ("Box", "14", "13", "3"),
+    "FD2-WTS-BLK-XL": ("Box", "12", "8", "6"),
+    "FD2-WTS-HNVY-L": ("Box", "12", "8", "6"),
+    "FD2-WTS-HNVY-M": ("Box", "12", "8", "6"),
+    "FD2-WTS-HNVY-XL": ("Box", "16", "12", "8"),
+    "FD3-MTS-BLK-L": ("Mailer", "16", "12", "0"),
+    "FD3-MTS-BLK-M": ("Box", "24", "16", "12"),
+    "LMB22-WTS-FGRN-M": ("Box", "12", "8", "6"),
+    "LMB22-WTS-FGRN-XXL": ("Box", "8", "6", "4"),
+    "WSTP-LTPPD-BLK": ("Box", "20", "14", "11"),
+}
+
 LIGHTSOURCE_SB_IMPORT_FIELDS = [
     "Order Number",
     "Order Date",
@@ -2242,6 +2419,267 @@ def write_error_report(rows: list[dict[str, str]], warnings: list[str]) -> Path 
     return output_path
 
 
+def parse_havn_email(text: str) -> dict[str, Any]:
+    normalized_text = text.replace("\r\n", "\n").replace("\r", "\n")
+    order_match = re.search(r"Order\s*#?\s*:\s*([A-Za-z0-9-]+)", normalized_text, re.IGNORECASE)
+    if not order_match:
+        subject_match = re.search(r"Return Label Request:\s*([A-Za-z0-9-]+)", normalized_text, re.IGNORECASE)
+        order = subject_match.group(1).strip() if subject_match else ""
+    else:
+        order = order_match.group(1).strip()
+
+    sku_block = ""
+    block_match = re.search(
+        r"Item\(s\)\s*for\s*Return\s*:\s*(.*?)(?:\n\s*(?:Let me know|Thanks|Regards|Best|Mark from HAVN)\b|$)",
+        normalized_text,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if block_match:
+        sku_block = block_match.group(1)
+
+    ignored = {"ORDER", "ITEM", "ITEMS", "RETURN", "THANKS", "HAVN", "TEAM"}
+
+    def parse_item_lines(value: str) -> list[dict[str, str]]:
+        parsed: list[dict[str, str]] = []
+        for raw_line in value.splitlines():
+            line = cell_text(raw_line)
+            if not line:
+                continue
+            match = re.search(r"\b(?P<sku>[A-Z0-9][A-Z0-9-]{2,})\b", line, re.IGNORECASE)
+            if not match:
+                continue
+            sku = match.group("sku").upper()
+            if sku in ignored or sku.isdigit():
+                continue
+            qty_text = "1"
+            tail = line[match.end():]
+            qty_match = (
+                re.search(r"(?:^|[\s:-])(?:x|\*|qty\.?|quantity)\s*(\d+)\b", tail, re.IGNORECASE)
+                or re.search(r"(?:^|[\s:-])(\d+)\s*(?:x|qty\.?|quantity)\b", tail, re.IGNORECASE)
+            )
+            if qty_match:
+                qty_text = qty_match.group(1)
+            parsed.append({"sku": sku, "qty": choose_quantity("", qty_text)})
+        return parsed
+
+    items = parse_item_lines(sku_block)
+
+    if not items:
+        for sku in re.findall(r"\b[A-Z]{2,}[A-Z0-9-]{3,}\b", normalized_text):
+            sku = sku.upper()
+            if sku not in ignored and not sku.isdigit():
+                items.append({"sku": sku, "qty": "1"})
+
+    deduped: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for item in items:
+        key = (item["sku"], item["qty"])
+        if key not in seen:
+            seen.add(key)
+            deduped.append(item)
+
+    return {"order_number": order, "skus": [item["sku"] for item in deduped], "items": deduped, "raw": text}
+
+
+def havn_request_rows(requests: list[dict[str, Any]]) -> list[dict[str, str]]:
+    rows: list[dict[str, str]] = []
+    for request_item in requests:
+        order = cell_text(request_item.get("order_number", ""))
+        for item in request_item.get("items", []):
+            sku = cell_text(item.get("sku", ""))
+            qty = choose_quantity("", cell_text(item.get("qty", "1")) or "1")
+            status_parts = []
+            if not order:
+                status_parts.append("Order Number")
+            if not sku:
+                status_parts.append("SKU")
+            status = "Missing " + ", ".join(status_parts) if status_parts else "Ready for inbound shipment upload"
+            rows.append(
+                {
+                    "Order Number": f"{order} RET" if order and not order.endswith(" RET") else order,
+                    "Source Order": order,
+                    "SKU": sku,
+                    "Qty": qty,
+                    "Status": status,
+                }
+            )
+    return rows
+
+
+def write_havn_request_report(requests: list[dict[str, Any]]) -> Path:
+    output_path = OUTPUT_DIR / f"havn_return_requests_{uuid.uuid4().hex[:8]}.csv"
+    rows = havn_request_rows(requests)
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["Order Number", "Source Order", "SKU", "Qty", "Status"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def parse_shopify_rows(csv_text: str) -> list[dict[str, str]]:
+    if not csv_text.strip():
+        return []
+    reader = csv.DictReader(io.StringIO(csv_text))
+    return [{key: cell_text(value) for key, value in row.items()} for row in reader]
+
+
+def shopify_by_order(rows: list[dict[str, str]]) -> dict[str, dict[str, str]]:
+    lookup: dict[str, dict[str, str]] = {}
+    for row in rows:
+        order = row_value(row, ["Shopify Order#", "Order Number", "Order #"])
+        if order:
+            lookup[normalized(order)] = row
+    return lookup
+
+
+def package_for_sku(sku: str, qty: str = "1") -> dict[str, str]:
+    sku_key = cell_text(sku).upper()
+    if sku_key in SKU_PACKAGE_DEFAULTS:
+        package_type, length, width, height = SKU_PACKAGE_DEFAULTS[sku_key]
+        return {"Package Type": package_type, "Package Length": length, "Package Width": width, "Package Height": height}
+
+    sku_norm = normalized(sku)
+    qty_num = numeric_quantity(qty) or 1
+    if "blkt" in sku_norm or qty_num > 1:
+        if qty_num >= 4:
+            return {"Package Type": "Box", "Package Length": "20", "Package Width": "20", "Package Height": "20"}
+        return {"Package Type": "Box", "Package Length": "16", "Package Width": "12", "Package Height": "8"}
+    return {"Package Type": "Mailer", "Package Length": "10", "Package Width": "13", "Package Height": "0"}
+
+
+def havn_validation_rows(requests: list[dict[str, Any]], shopify_rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    by_order = shopify_by_order(shopify_rows)
+    validation: list[dict[str, str]] = []
+    for row in havn_request_rows(requests):
+        source_order = row["Source Order"]
+        shopify = by_order.get(normalized(source_order))
+        shopify_skus = split_skus(row_value(shopify or {}, ["SKUs", "SKU", "Item SKU"]))
+        status = "Matched"
+        if not shopify:
+            status = "Order not found in Shopify CSV"
+        elif row["SKU"] not in shopify_skus:
+            status = "SKU not found on Shopify order"
+        validation.append(
+            {
+                "Order Number": row["Order Number"],
+                "SKU": row["SKU"],
+                "Shopify SKUs": ", ".join(shopify_skus),
+                "Status": status,
+            }
+        )
+    return validation
+
+
+def write_havn_validation_report(requests: list[dict[str, Any]], shopify_rows: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"havn_sku_validation_{uuid.uuid4().hex[:8]}.csv"
+    rows = havn_validation_rows(requests, shopify_rows)
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["Order Number", "SKU", "Shopify SKUs", "Status"])
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def write_havn_order_import(requests: list[dict[str, Any]], shopify_rows: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"HAVN_RET_IMPORT_{uuid.uuid4().hex[:8]}.csv"
+    by_order = shopify_by_order(shopify_rows)
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=HAVN_ORDER_IMPORT_FIELDS)
+        writer.writeheader()
+        for row in havn_request_rows(requests):
+            shopify = by_order.get(normalized(row["Source Order"]), {})
+            full_name = title_case_name(row_value(shopify, ["Full Name", "Name", "Customer"]))
+            package = package_for_sku(row["SKU"], row["Qty"])
+            writer.writerow(
+                {
+                    "Order Number": row["Order Number"],
+                    "Order Date": "",
+                    "Requested Service": "",
+                    "Item SKU": row["SKU"],
+                    "Item Unit Price": "",
+                    "Item Quantity": row["Qty"],
+                    "HS Code": "",
+                    "Country Of Origin": "",
+                    "Company Name": "Basic 3PL RMA",
+                    "First Name": "HAVN",
+                    "Last Name": "RETURN",
+                    "Address Line 1": "7050 New Buffington Road",
+                    "Address Line 2": "#50872546",
+                    "City": "Florence",
+                    "State/Province": "KY",
+                    "Zip/Postal Code": "41042",
+                    "Country": "US",
+                    "Email": "hello@havnwear.com",
+                    "Phone": "14088285055",
+                    "Notes": "",
+                    "Signature Required": "",
+                    "Package SKU": "",
+                    "Package Type": package["Package Type"],
+                    "Package Length": package["Package Length"],
+                    "Package Width": package["Package Width"],
+                    "Package Height": package["Package Height"],
+                    "Declared Value": "",
+                    "Package #": "",
+                    "Origin Address Line 1": row_value(shopify, ["Address Line 1"]),
+                    "Origin Address Line 2": row_value(shopify, ["Address Line 2"]),
+                    "Origin City": row_value(shopify, ["City"]),
+                    "Origin State/Province": row_value(shopify, ["State", "State/Province"]),
+                    "Origin Zip/Postal Code": row_value(shopify, ["Zipcode", "Zip/Postal Code", "Zip"]),
+                    "Origin Country": row_value(shopify, ["Country Code", "Country"]) or "US",
+                    "Origin Company": "Basic_3PL_RMA",
+                    "Origin Contact Name": full_name,
+                    "Origin Phone": "14088285055",
+                    "Origin Email": "hello@havnwear.com",
+                }
+            )
+    return output_path
+
+
+def write_havn_inbound_upload(requests: list[dict[str, Any]]) -> Path:
+    output_path = OUTPUT_DIR / f"havn_inbound_shipment_upload_{uuid.uuid4().hex[:8]}.csv"
+    today = date.today().isoformat()
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=PLATFORM_FIELDS)
+        writer.writeheader()
+        for row in havn_request_rows(requests):
+            writer.writerow(
+                {
+                    "Shipment # *": row["Order Number"],
+                    "Date Sent Out *": today,
+                    "Receiving Date *": today,
+                    "Shipment Type": "",
+                    "Inbound Pallets": "",
+                    "Product Variant SKU *": row["SKU"],
+                    "Lot #": "",
+                    "Cases *": row["Qty"],
+                    "Units per Case *": "1",
+                    "Tracking Info": "",
+                    "Notes": "",
+                }
+            )
+    return output_path
+
+
+def havn_inbound_preview(requests: list[dict[str, Any]]) -> list[dict[str, str]]:
+    today = date.today().isoformat()
+    preview: list[dict[str, str]] = []
+    for row in havn_request_rows(requests):
+        preview.append(
+            {
+                "Shipment # *": row["Order Number"],
+                "Date Sent Out *": today,
+                "Receiving Date *": today,
+                "Shipment Type": "",
+                "Inbound Pallets": "",
+                "Product Variant SKU *": row["SKU"],
+                "Lot #": "",
+                "Cases *": row["Qty"],
+                "Units per Case *": "1",
+                "Tracking Info": "",
+                "Notes": "",
+            }
+        )
+    return preview
 def extract_lightsource_field(text: str, label: str) -> str:
     match = re.search(rf"^{re.escape(label)}\s*:\s*(.+?)\s*$", text, re.IGNORECASE | re.MULTILINE)
     return cell_text(match.group(1)) if match else ""
@@ -2474,6 +2912,132 @@ def split_name(full_name: str) -> tuple[str, str]:
     if len(parts) == 1:
         return parts[0], ""
     return " ".join(parts[:-1]), parts[-1]
+
+
+def split_skus(value: str) -> list[str]:
+    pieces = re.split(r"[,;\n]+", cell_text(value))
+    return [piece.strip() for piece in pieces if piece.strip()]
+
+
+def read_csv_dicts(file_id: str) -> list[dict[str, str]]:
+    matches = list(UPLOAD_DIR.glob(f"{file_id}.*"))
+    if not matches:
+        raise ValueError(f"Uploaded file {file_id} was not found.")
+    with matches[0].open(newline="", encoding="utf-8-sig") as handle:
+        return [{key: cell_text(value) for key, value in row.items()} for row in csv.DictReader(handle)]
+
+
+def outbound_order_number(source: dict[str, str]) -> str:
+    by_norm = {normalized(key): key for key in source.keys() if "external" not in normalized(key)}
+    order = ""
+    for candidate in OUTBOUND_ORDER_ALIASES:
+        key = by_norm.get(normalized(candidate))
+        if key:
+            order = value_from(source, key)
+            break
+    if not order:
+        for key in source.keys():
+            key_norm = normalized(key)
+            if "external" in key_norm:
+                continue
+            for candidate in OUTBOUND_ORDER_ALIASES:
+                candidate_norm = normalized(candidate)
+                if len(candidate_norm) > 5 and candidate_norm in key_norm:
+                    order = value_from(source, key)
+                    break
+            if order:
+                break
+    if order:
+        return normalize_order_number(order)
+
+    external_order = row_value(source, ["External Order ID", "External Order", "External ID"])
+    for key, value in source.items():
+        text = cell_text(value)
+        digits = digits_only(text)
+        if not digits or text == external_order:
+            continue
+        if re.fullmatch(r"0?617022\d{9,}", digits):
+            return normalize_order_number(digits)
+    return ""
+
+
+def outbound_order_rows(file_id: str) -> list[dict[str, str]]:
+    source_rows = read_csv_dicts(file_id)
+    output: list[dict[str, str]] = []
+    for source in source_rows:
+        order = outbound_order_number(source)
+        full_name = title_case_name(row_value(source, ["Full Name", "Name", "Customer"]))
+        skus = split_skus(row_value(source, OUTBOUND_SKU_ALIASES))
+        if not skus:
+            skus = [""]
+        for sku in skus:
+            cases = choose_quantity("", row_value(source, ["Cases *", "Cases"]) or "1")
+            units = choose_quantity("", row_value(source, ["Units per Case *", "Units per Case"]))
+            if units:
+                qty = str(max(1, int(cases or "1") * int(units)))
+            else:
+                qty = choose_quantity("", row_value(source, OUTBOUND_QTY_ALIASES) or "1")
+            package = package_for_sku(sku, qty)
+            output.append(
+                {
+                    "Order Number": f"{order} RET" if order and not order.endswith(" RET") else order,
+                    "Order Date": "",
+                    "Requested Service": "",
+                    "Item SKU": sku,
+                    "Item Unit Price": "",
+                    "Item Quantity": qty,
+                    "HS Code": "",
+                    "Country Of Origin": "",
+                    **HAVN_DESTINATION_FIELDS,
+                    "Notes": "",
+                    "Signature Required": "",
+                    "Package SKU": "",
+                    "Package Type": package["Package Type"],
+                    "Package Length": package["Package Length"],
+                    "Package Width": package["Package Width"],
+                    "Package Height": package["Package Height"],
+                    "Declared Value": "",
+                    "Package #": "",
+                    "Origin Address Line 1": row_value(source, ["Address Line 1"]),
+                    "Origin Address Line 2": row_value(source, ["Address Line 2"]),
+                    "Origin City": row_value(source, ["City"]),
+                    "Origin State/Province": row_value(source, ["State", "State/Province"]),
+                    "Origin Zip/Postal Code": row_value(source, ["Zipcode", "Zip/Postal Code", "Zip"]),
+                    "Origin Country": row_value(source, ["Country Code", "Country"]) or "US",
+                    **HAVN_ORIGIN_DEFAULTS,
+                    "Origin Contact Name": full_name,
+                }
+            )
+    return output
+
+
+def write_outbound_order_import(rows: list[dict[str, str]]) -> Path:
+    output_path = OUTPUT_DIR / f"Soapbox_Import_Order_{uuid.uuid4().hex[:8]}.csv"
+    with output_path.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=SOAPBOX_ORDER_IMPORT_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+    return output_path
+
+
+def outbound_report_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    report: list[dict[str, str]] = []
+    for row in rows:
+        missing = []
+        for field in ["Order Number", "First Name", "Last Name", "Address Line 1", "City", "State/Province", "Zip/Postal Code", "Country", "Item SKU", "Package Type", "Package Length", "Package Width", "Package Height", "Origin Address Line 1", "Origin City", "Origin State/Province", "Origin Zip/Postal Code", "Origin Country"]:
+            if not row.get(field):
+                missing.append(field)
+        report.append(
+            {
+                "Order Number": row.get("Order Number", ""),
+                "Name": row.get("Origin Contact Name", ""),
+                "SKU": row.get("Item SKU", ""),
+                "Address": ", ".join([part for part in [row.get("Origin Address Line 1", ""), row.get("Origin Address Line 2", ""), row.get("Origin City", ""), row.get("Origin State/Province", ""), row.get("Origin Zip/Postal Code", "")] if part]),
+                "Package": " ".join([row.get("Package Type", ""), "x".join([row.get("Package Length", ""), row.get("Package Width", ""), row.get("Package Height", "")])]).strip(),
+                "Status": "Missing " + ", ".join(missing) if missing else "Ready",
+            }
+        )
+    return report
 
 
 def version_tuple(value: str) -> tuple[int, ...]:
@@ -2761,6 +3325,12 @@ class ShipmentHandler(BaseHTTPRequestHandler):
         if self.path == "/api/export":
             self.handle_export()
             return
+        if self.path == "/api/havn/parse":
+            self.handle_havn_parse()
+            return
+        if self.path == "/api/havn/export":
+            self.handle_havn_export()
+            return
         if self.path == "/api/bulk-inbound/generate":
             self.handle_bulk_inbound_generate()
             return
@@ -2778,6 +3348,9 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/lightsource/export":
             self.handle_lightsource_export()
+            return
+        if self.path == "/api/outbound/generate":
+            self.handle_outbound_generate()
             return
         self.send_json({"error": "Not found."}, HTTPStatus.NOT_FOUND)
 
@@ -2913,6 +3486,49 @@ class ShipmentHandler(BaseHTTPRequestHandler):
         }
         self.send_json(response)
 
+    def handle_havn_parse(self) -> None:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            parsed = parse_havn_email(payload.get("text", ""))
+            if not parsed["order_number"] or not parsed["skus"]:
+                self.send_json(
+                    {
+                        "error": "Could not find both an order number and at least one SKU in that pasted email.",
+                        "parsed": parsed,
+                    },
+                    HTTPStatus.BAD_REQUEST,
+                )
+                return
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(parsed)
+
+    def handle_havn_export(self) -> None:
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            requests = payload.get("requests", [])
+            if not requests:
+                self.send_json({"error": "Add at least one Havn return email first."}, HTTPStatus.BAD_REQUEST)
+                return
+            report_path = write_havn_request_report(requests)
+            upload_path = write_havn_inbound_upload(requests)
+            rows = havn_request_rows(requests)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(
+            {
+                "report_url": f"/download/{report_path.name}",
+                "upload_url": f"/download/{upload_path.name}",
+                "row_count": len(rows),
+                "preview": rows[:100],
+                "upload_preview": havn_inbound_preview(requests)[:25],
+            }
+        )
+
     def handle_bulk_inbound_generate(self) -> None:
         try:
             form = cgi.FieldStorage(
@@ -3033,6 +3649,40 @@ class ShipmentHandler(BaseHTTPRequestHandler):
             self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
             return
         self.send_json(result)
+
+    def handle_outbound_generate(self) -> None:
+        try:
+            form = cgi.FieldStorage(
+                fp=self.rfile,
+                headers=self.headers,
+                environ={
+                    "REQUEST_METHOD": "POST",
+                    "CONTENT_TYPE": self.headers.get("Content-Type", ""),
+                    "CONTENT_LENGTH": self.headers.get("Content-Length", "0"),
+                },
+            )
+            field = form["file"] if "file" in form else None
+            if field is None or not getattr(field, "filename", None):
+                self.send_json({"error": "Upload shopify_orders_shipping_skus.csv first."}, HTTPStatus.BAD_REQUEST)
+                return
+            file_id, _filename = save_upload(UploadStorage(field.filename, field.file))
+            rows = outbound_order_rows(file_id)
+            if not rows:
+                self.send_json({"error": "No outbound order rows could be created."}, HTTPStatus.BAD_REQUEST)
+                return
+            output_path = write_outbound_order_import(rows)
+            report = outbound_report_rows(rows)
+        except Exception as exc:
+            self.send_json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+            return
+        self.send_json(
+            {
+                "download_url": f"/download/{output_path.name}",
+                "row_count": len(rows),
+                "preview": rows[:50],
+                "report_preview": report[:100],
+            }
+        )
 
     def handle_lightsource_parse(self) -> None:
         try:
@@ -3889,7 +4539,7 @@ HTML = r"""
       <div>
         <span class="brand-kicker">Soapbox Operations</span>
         <h1>Returns Shipment Builder</h1>
-        <div class="subtle">Build inbound returns, reconcile warehouse invoices, and prepare warehouse imports from one local workspace.</div>
+        <div class="subtle">Build inbound returns, onboarding imports, and replacement order CSVs from one local workspace.</div>
       </div>
       <button class="secondary" id="closeApp" type="button">Close App</button>
     </div>
@@ -3903,9 +4553,9 @@ HTML = r"""
       </div>
       <div class="task-group" aria-label="Returns tasks">
         <span class="task-group-label">Returns</span>
-
+        <button class="tab" id="havnTab">Havn</button>
         <button class="tab" id="lightsourceTab">Lightsource</button>
-
+        <button class="tab" id="outboundTab">Replacement</button>
       </div>
       <div class="task-group" aria-label="Warehouse tasks">
         <span class="task-group-label">Warehouse</span>
@@ -3979,6 +4629,43 @@ HTML = r"""
       <section id="christyReconciliationResultSection" class="hidden">
         <h2>Reconciliation Result</h2>
         <div id="christyReconciliationResult"></div>
+      </section>
+    </div>
+
+    <div id="havnApp" class="hidden">
+      <section>
+        <h2>Havn Return Email</h2>
+        <textarea id="havnEmail" placeholder="Paste one Havn return label request email here..."></textarea>
+        <div class="row">
+          <button id="havnAdd">Add Email to List</button>
+          <button id="havnClear" class="tab">Clear List</button>
+          <span id="havnStatus" class="subtle"></span>
+        </div>
+      </section>
+
+      <section>
+        <h2>Havn Return List</h2>
+        <div class="manual-entry">
+          <label>Order #
+            <input id="havnManualOrder" class="list-input" type="text" placeholder="0617022189174727">
+          </label>
+          <label>SKU
+            <input id="havnManualSku" class="list-input" type="text" placeholder="FD-ULGHTBNE-BLK-1">
+          </label>
+          <label>Qty
+            <input id="havnManualQty" class="list-input qty-input" type="text" inputmode="numeric" value="1">
+          </label>
+          <button id="havnManualAdd" type="button">Add Row</button>
+        </div>
+        <div id="havnList" class="subtle">No Havn emails added yet.</div>
+        <div class="row">
+          <button id="havnExport">Generate Havn Files</button>
+        </div>
+      </section>
+
+      <section id="havnResultSection" class="hidden">
+        <h2>Havn Result</h2>
+        <div id="havnResult"></div>
       </section>
     </div>
 
@@ -4120,6 +4807,20 @@ HTML = r"""
       </section>
     </div>
 
+    <div id="outboundApp" class="hidden">
+      <section>
+        <h2>Outbound Replacement Order</h2>
+        <input id="outboundFile" type="file" accept=".csv">
+        <div class="row">
+          <button id="outboundGenerate">Generate Soapbox Import Order CSV</button>
+          <span id="outboundStatus" class="subtle"></span>
+        </div>
+      </section>
+      <section id="outboundResultSection" class="hidden">
+        <h2>Outbound Result</h2>
+        <div id="outboundResult"></div>
+      </section>
+    </div>
   </main>
 
   <script>
@@ -4133,7 +4834,7 @@ HTML = r"""
     let analyzedFiles = [];
     let analyzedWorkbook = null;
     let currentMode = "";
-
+    let havnRequests = [];
     let lightsourceRequests = [];
     let labelDesignerElements = [];
     let selectedLabelElementId = "";
@@ -4147,6 +4848,10 @@ HTML = r"""
     const christyReconciliationStatusEl = document.querySelector("#christyReconciliationStatus");
     const christyReconciliationResultSection = document.querySelector("#christyReconciliationResultSection");
     const christyReconciliationResultEl = document.querySelector("#christyReconciliationResult");
+    const havnStatusEl = document.querySelector("#havnStatus");
+    const havnListEl = document.querySelector("#havnList");
+    const havnResultSection = document.querySelector("#havnResultSection");
+    const havnResultEl = document.querySelector("#havnResult");
     const productVariantsStatusEl = document.querySelector("#productVariantsStatus");
     const productVariantsResultSection = document.querySelector("#productVariantsResultSection");
     const productVariantsResultEl = document.querySelector("#productVariantsResult");
@@ -4166,6 +4871,9 @@ HTML = r"""
     const lightsourceListEl = document.querySelector("#lightsourceList");
     const lightsourceResultSection = document.querySelector("#lightsourceResultSection");
     const lightsourceResultEl = document.querySelector("#lightsourceResult");
+    const outboundStatusEl = document.querySelector("#outboundStatus");
+    const outboundResultSection = document.querySelector("#outboundResultSection");
+    const outboundResultEl = document.querySelector("#outboundResult");
     const updateBannerEl = document.querySelector("#updateBanner");
 
     checkForUpdates();
@@ -4173,11 +4881,11 @@ HTML = r"""
 
     document.querySelector("#christyTab").addEventListener("click", () => setAppTab("christy"));
     document.querySelector("#christyReconciliationTab").addEventListener("click", () => setAppTab("christyReconciliation"));
-
+    document.querySelector("#havnTab").addEventListener("click", () => setAppTab("havn"));
     document.querySelector("#bulkInboundTab").addEventListener("click", () => setAppTab("bulkInbound"));
     document.querySelector("#inboundLabelsTab").addEventListener("click", () => setAppTab("inboundLabels"));
     document.querySelector("#lightsourceTab").addEventListener("click", () => setAppTab("lightsource"));
-
+    document.querySelector("#outboundTab").addEventListener("click", () => setAppTab("outbound"));
     document.querySelectorAll("[data-theme-choice]").forEach((button) => {
       button.addEventListener("click", () => applyButtonTheme(button.dataset.themeChoice));
     });
@@ -4197,18 +4905,18 @@ HTML = r"""
     function setAppTab(tabName) {
       document.querySelector("#christyApp").classList.toggle("hidden", tabName !== "christy");
       document.querySelector("#christyReconciliationApp").classList.toggle("hidden", tabName !== "christyReconciliation");
-
+      document.querySelector("#havnApp").classList.toggle("hidden", tabName !== "havn");
       document.querySelector("#bulkInboundApp").classList.toggle("hidden", tabName !== "bulkInbound");
       document.querySelector("#inboundLabelsApp").classList.toggle("hidden", tabName !== "inboundLabels");
       document.querySelector("#lightsourceApp").classList.toggle("hidden", tabName !== "lightsource");
-
+      document.querySelector("#outboundApp").classList.toggle("hidden", tabName !== "outbound");
       document.querySelector("#christyTab").classList.toggle("active", tabName === "christy");
       document.querySelector("#christyReconciliationTab").classList.toggle("active", tabName === "christyReconciliation");
-
+      document.querySelector("#havnTab").classList.toggle("active", tabName === "havn");
       document.querySelector("#bulkInboundTab").classList.toggle("active", tabName === "bulkInbound");
       document.querySelector("#inboundLabelsTab").classList.toggle("active", tabName === "inboundLabels");
       document.querySelector("#lightsourceTab").classList.toggle("active", tabName === "lightsource");
-
+      document.querySelector("#outboundTab").classList.toggle("active", tabName === "outbound");
       if (tabName === "inboundLabels") {
         requestAnimationFrame(renderLabelPreview);
       }
@@ -4382,6 +5090,133 @@ HTML = r"""
       }
     });
 
+    document.querySelector("#havnAdd").addEventListener("click", async () => {
+      const text = document.querySelector("#havnEmail").value.trim();
+      havnResultSection.classList.add("hidden");
+      if (!text) {
+        havnStatusEl.textContent = "Paste one Havn email first.";
+        return;
+      }
+      havnStatusEl.textContent = "Reading email...";
+      document.querySelector("#havnAdd").disabled = true;
+      try {
+        const response = await fetch("/api/havn/parse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          havnStatusEl.textContent = data.error || "Could not parse that email.";
+          return;
+        }
+        const incomingItems = (data.items || data.skus.map(sku => ({ sku, qty: "1" }))).map(item => ({
+          sku: String(item.sku || "").trim().toUpperCase(),
+          qty: String(item.qty || "1").trim() || "1",
+        })).filter(item => item.sku);
+        const result = addHavnItems(data.order_number, incomingItems);
+        document.querySelector("#havnEmail").value = "";
+        renderHavnList();
+        if (!result.added) {
+          havnStatusEl.textContent = `Already added: ${data.order_number} with the same SKU and qty.`;
+        } else if (result.duplicates) {
+          havnStatusEl.textContent = `Added ${result.added} row${result.added === 1 ? "" : "s"} and skipped ${result.duplicates} duplicate row${result.duplicates === 1 ? "" : "s"}.`;
+        } else {
+          havnStatusEl.textContent = `Added ${data.order_number} with ${result.added} row${result.added === 1 ? "" : "s"}.`;
+        }
+      } catch (error) {
+        havnStatusEl.textContent = "The server stopped responding while parsing the email.";
+      } finally {
+        document.querySelector("#havnAdd").disabled = false;
+      }
+    });
+
+    document.querySelector("#havnClear").addEventListener("click", () => {
+      havnRequests = [];
+      havnResultSection.classList.add("hidden");
+      havnStatusEl.textContent = "List cleared.";
+      renderHavnList();
+    });
+
+    havnListEl.addEventListener("change", event => {
+      if (!event.target.matches("[data-edit-havn-item]")) return;
+      saveHavnItemEdit(event.target);
+    });
+
+    havnListEl.addEventListener("keydown", event => {
+      if (!event.target.matches("[data-edit-havn-item]") || event.key !== "Enter") return;
+      event.preventDefault();
+      saveHavnItemEdit(event.target);
+      event.target.blur();
+    });
+
+    havnListEl.addEventListener("click", event => {
+      const button = event.target.closest("[data-remove-havn-item]");
+      if (!button) return;
+      const requestIndex = Number(button.dataset.requestIndex);
+      const itemIndex = Number(button.dataset.itemIndex);
+      const request = havnRequests[requestIndex];
+      const item = request?.items?.[itemIndex];
+      if (!request || !item) return;
+      const orderNumber = `${request.order_number} RET`;
+      if (!confirm(`Remove ${item.sku} from ${orderNumber}?`)) return;
+      request.items.splice(itemIndex, 1);
+      if (!request.items.length) {
+        havnRequests.splice(requestIndex, 1);
+      }
+      havnResultSection.classList.add("hidden");
+      havnStatusEl.textContent = `Removed ${item.sku} from ${orderNumber}.`;
+      renderHavnList();
+    });
+
+    document.querySelector("#havnManualAdd").addEventListener("click", () => {
+      const order = document.querySelector("#havnManualOrder").value.trim();
+      const sku = document.querySelector("#havnManualSku").value.trim().toUpperCase();
+      const qty = document.querySelector("#havnManualQty").value.trim() || "1";
+      havnResultSection.classList.add("hidden");
+      if (!order || !sku || !qty) {
+        havnStatusEl.textContent = "Manual rows need an order number, SKU, and qty.";
+        return;
+      }
+      const result = addHavnItems(order, [{ sku, qty }]);
+      renderHavnList();
+      if (!result.added) {
+        havnStatusEl.textContent = `Already added: ${cleanHavnOrderNumber(order)} with ${sku} qty ${qty}.`;
+        return;
+      }
+      document.querySelector("#havnManualOrder").value = "";
+      document.querySelector("#havnManualSku").value = "";
+      document.querySelector("#havnManualQty").value = "1";
+      havnStatusEl.textContent = `Added manual row for ${cleanHavnOrderNumber(order)} / ${sku} / qty ${qty}.`;
+    });
+
+    document.querySelector("#havnExport").addEventListener("click", async () => {
+      if (!havnRequests.length) {
+        havnStatusEl.textContent = "Add at least one Havn email first.";
+        return;
+      }
+      havnStatusEl.textContent = "Generating Havn files...";
+      document.querySelector("#havnExport").disabled = true;
+      try {
+        const response = await fetch("/api/havn/export", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requests: havnRequests }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          havnStatusEl.textContent = data.error || "Could not generate Havn files.";
+          return;
+        }
+        havnStatusEl.textContent = "Havn inbound shipment CSV and report are ready.";
+        renderHavnResult(data);
+      } catch (error) {
+        havnStatusEl.textContent = "The server stopped responding while generating Havn files.";
+      } finally {
+        document.querySelector("#havnExport").disabled = false;
+      }
+    });
+
     document.querySelector("#bulkInboundGenerate").addEventListener("click", async () => {
       const documents = [...document.querySelector("#bulkDocuments").files];
       const productVariants = document.querySelector("#bulkProductVariants").files[0];
@@ -4500,6 +5335,33 @@ HTML = r"""
         productVariantsStatusEl.textContent = "The server stopped responding while reading the product listing.";
       } finally {
         document.querySelector("#productVariantsGenerate").disabled = false;
+      }
+    });
+
+    document.querySelector("#outboundGenerate").addEventListener("click", async () => {
+      const file = document.querySelector("#outboundFile").files[0];
+      outboundResultSection.classList.add("hidden");
+      if (!file) {
+        outboundStatusEl.textContent = "Upload shopify_orders_shipping_skus.csv first.";
+        return;
+      }
+      outboundStatusEl.textContent = "Generating outbound replacement import...";
+      document.querySelector("#outboundGenerate").disabled = true;
+      const form = new FormData();
+      form.append("file", file);
+      try {
+        const response = await fetch("/api/outbound/generate", { method: "POST", body: form });
+        const data = await response.json();
+        if (!response.ok) {
+          outboundStatusEl.textContent = data.error || "Could not generate outbound order import.";
+          return;
+        }
+        outboundStatusEl.textContent = "Soapbox import order CSV is ready.";
+        renderOutboundResult(data);
+      } catch (error) {
+        outboundStatusEl.textContent = "The server stopped responding while generating the outbound import.";
+      } finally {
+        document.querySelector("#outboundGenerate").disabled = false;
       }
     });
 
@@ -4635,6 +5497,90 @@ HTML = r"""
         `;
         fileListEl.appendChild(wrapper);
       });
+    }
+
+    function havnItemKey(order, sku, qty) {
+      return `${cleanHavnOrderNumber(order).toUpperCase()}|${String(sku || "").trim().toUpperCase()}|${String(qty || "1").trim() || "1"}`;
+    }
+
+    function addHavnItems(order, items) {
+      const cleanOrder = cleanHavnOrderNumber(order);
+      const existing = new Set();
+      havnRequests.forEach(request => {
+        request.items.forEach(item => existing.add(havnItemKey(request.order_number, item.sku, item.qty)));
+      });
+      let request = havnRequests.find(candidate => candidate.order_number.trim().toUpperCase() === cleanOrder.toUpperCase());
+      let added = 0;
+      let duplicates = 0;
+      items.forEach(item => {
+        const sku = String(item.sku || "").trim().toUpperCase();
+        const qty = String(item.qty || "1").trim() || "1";
+        if (!cleanOrder || !sku || !qty) return;
+        const key = havnItemKey(cleanOrder, sku, qty);
+        if (existing.has(key)) {
+          duplicates += 1;
+          return;
+        }
+        if (!request) {
+          request = { order_number: cleanOrder, items: [] };
+          havnRequests.push(request);
+        }
+        request.items.push({ sku, qty });
+        existing.add(key);
+        added += 1;
+      });
+      havnResultSection.classList.add("hidden");
+      return { added, duplicates };
+    }
+
+    function renderHavnList() {
+      if (!havnRequests.length) {
+        havnListEl.className = "subtle";
+        havnListEl.textContent = "No Havn emails added yet.";
+        return;
+      }
+      const rows = [];
+      havnRequests.forEach((request, requestIndex) => {
+        request.items.forEach((item, itemIndex) => {
+          rows.push({
+            "Order Number": `<input class="list-input order-input" data-edit-havn-item data-field="order_number" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(`${request.order_number} RET`)}" aria-label="Order number for ${escapeHtml(item.sku)}">`,
+            "SKU": `<input class="list-input sku-input" data-edit-havn-item data-field="sku" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(item.sku)}" aria-label="SKU for ${escapeHtml(`${request.order_number} RET`)}">`,
+            "Qty": `<input class="list-input qty-input" data-edit-havn-item data-field="qty" data-request-index="${requestIndex}" data-item-index="${itemIndex}" value="${escapeHtml(item.qty || "1")}" inputmode="numeric" aria-label="Quantity for ${escapeHtml(item.sku)}">`,
+            "Remove": `<button class="danger" type="button" data-remove-havn-item data-request-index="${requestIndex}" data-item-index="${itemIndex}">Remove</button>`,
+          });
+        });
+      });
+      havnListEl.className = "preview";
+      havnListEl.innerHTML = htmlTable(rows);
+    }
+
+    function saveHavnItemEdit(input) {
+      const requestIndex = Number(input.dataset.requestIndex);
+      const itemIndex = Number(input.dataset.itemIndex);
+      const field = input.dataset.field;
+      const request = havnRequests[requestIndex];
+      const item = request?.items?.[itemIndex];
+      if (!request || !item) return;
+      let value = input.value.trim();
+      if (field === "order_number") {
+        value = cleanHavnOrderNumber(value);
+        request.order_number = value;
+        renderHavnList();
+      } else if (field === "sku") {
+        value = value || item.sku;
+        item.sku = value;
+        input.value = value;
+      } else if (field === "qty") {
+        value = value || "1";
+        item.qty = value;
+        input.value = value;
+      }
+      havnResultSection.classList.add("hidden");
+      havnStatusEl.textContent = `Saved ${fieldLabel(field)} for ${item.sku}.`;
+    }
+
+    function cleanHavnOrderNumber(value) {
+      return value.replace(/\s+RET$/i, "").trim();
     }
 
     function fieldLabel(field) {
@@ -4775,6 +5721,40 @@ HTML = r"""
         ` : ""}
       `;
       christyReconciliationResultSection.classList.remove("hidden");
+    }
+
+    function renderHavnResult(data) {
+      const preview = data.preview || [];
+      const uploadPreview = data.upload_preview || [];
+      havnResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.row_count} Havn return rows created.</strong>
+          <div class="row">
+            <a class="download" href="${data.report_url}">Download Havn Report</a>
+            <a class="download" href="${data.upload_url}">Download Inbound Upload CSV</a>
+          </div>
+        </div>
+        ${preview.length ? `
+          <details style="margin-top: 18px;">
+            <summary><strong>Report Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+        ${uploadPreview.length ? `
+          <details open style="margin-top: 18px;">
+            <summary><strong>Inbound Upload Preview</strong></summary>
+            <div class="preview" style="margin-top: 8px; border: 1px solid var(--line); border-radius: 8px;">
+              ${simpleTable(uploadPreview)}
+            </div>
+          </details>
+        ` : ""}
+        <div class="notice" style="margin-top: 12px;">
+          This creates the inbound shipment from the pasted email order/SKU list. Tracking is blank until the return label tracking number is available.
+        </div>
+      `;
+      havnResultSection.classList.remove("hidden");
     }
 
     function renderBulkInboundResult(data) {
@@ -5344,6 +6324,36 @@ HTML = r"""
         ` : ""}
       `;
       productVariantsResultSection.classList.remove("hidden");
+    }
+
+    function renderOutboundResult(data) {
+      const reportPreview = data.report_preview || [];
+      const preview = data.preview || [];
+      outboundResultEl.innerHTML = `
+        <div class="success">
+          <strong>${data.row_count} outbound item rows created.</strong>
+          <div class="row">
+            <a class="download" href="${data.download_url}">Download Soapbox Import Order CSV</a>
+          </div>
+        </div>
+        ${reportPreview.length ? `
+          <details class="preview-panel">
+            <summary><strong>Outbound Report Preview</strong></summary>
+            <div class="table-wrap">
+              ${simpleTable(reportPreview)}
+            </div>
+          </details>
+        ` : ""}
+        ${preview.length ? `
+          <details class="preview-panel" open>
+            <summary><strong>Soapbox CSV Preview</strong></summary>
+            <div class="table-wrap">
+              ${simpleTable(preview)}
+            </div>
+          </details>
+        ` : ""}
+      `;
+      outboundResultSection.classList.remove("hidden");
     }
 
     function renderLightsourceResult(data) {
